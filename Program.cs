@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Xml;
@@ -15,7 +14,7 @@ namespace Destrospean.STBLizePlus
     {
         public static readonly string ArbitraryMaleSuffix = "{DESTROSPEAN_STBL_MALE_SUFFIX_" + Guid.NewGuid() + "}",
         ArbitrarySeparator = "{DESTROSPEAN_STBL_SEPARATOR_" + Guid.NewGuid() + "}",
-        OutputDirectoryFilename = ".IS_CREATED_STBLIZE+_DIR";
+        STBLizePlusDirectoryFilename = ".IS_CREATED_STBLIZE+_DIR";
 
         public static ulong CurrentTime
         {
@@ -120,6 +119,24 @@ namespace Destrospean.STBLizePlus
             YamlOnly
         }
 
+        public static void CreateSTBLizePlusDirectoryFile(string directoryPath)
+        {
+            Directory.CreateDirectory(directoryPath);
+            var createdDirectoryFilePath = directoryPath + Path.DirectorySeparatorChar + STBLizePlusDirectoryFilename;
+            using (var output = File.Create(createdDirectoryFilePath))
+            {
+            }
+            switch ((int)Environment.OSVersion.Platform)
+            {
+                case 4:
+                case 128:
+                    break;
+                default:
+                    File.SetAttributes(createdDirectoryFilePath, File.GetAttributes(createdDirectoryFilePath) | FileAttributes.Hidden);
+                    break;
+            }
+        }
+
         public static ulong GetFNV64(string value)
         {
             var hash = 0xCBF29CE484222325;
@@ -135,38 +152,10 @@ namespace Destrospean.STBLizePlus
         public static string GetOutputPath(string[] paths, Options options)
         {
             var pathWithoutExtension = Path.GetFullPath(paths[0].Contains(".") ? paths[0].Substring(0, paths[0].LastIndexOf(".")) : paths[0]);
-            var outputPath = options.OutputDirectory ?? (File.Exists(Path.GetDirectoryName(pathWithoutExtension) + Path.DirectorySeparatorChar + OutputDirectoryFilename) ? Path.GetDirectoryName(Path.GetDirectoryName(pathWithoutExtension)) : Path.GetDirectoryName(pathWithoutExtension)) + Path.DirectorySeparatorChar + Path.GetFileName(pathWithoutExtension) + "_STBL_" + CurrentTime;
+            var outputPath = options.OutputDirectory ?? (File.Exists(Path.GetDirectoryName(pathWithoutExtension) + Path.DirectorySeparatorChar + STBLizePlusDirectoryFilename) ? Path.GetDirectoryName(Path.GetDirectoryName(pathWithoutExtension)) : Path.GetDirectoryName(pathWithoutExtension)) + Path.DirectorySeparatorChar + Path.GetFileName(pathWithoutExtension) + "_STBL_" + CurrentTime;
             if (!Directory.Exists(outputPath))
             {
-                Directory.CreateDirectory(outputPath);
-                var createdDirectoryFilePath = outputPath + Path.DirectorySeparatorChar + OutputDirectoryFilename;
-                using (var output = File.Create(createdDirectoryFilePath))
-                {
-                }
-                switch ((int)Environment.OSVersion.Platform)
-                {
-                    case 4:
-                    case 128:
-                        break;
-                    default:
-                        using (var process = new Process
-                            {
-                                StartInfo = new ProcessStartInfo
-                                    {
-                                        Arguments = "+h \"" + createdDirectoryFilePath + "\"",
-                                        CreateNoWindow = true,
-                                        FileName = "attrib",
-                                        RedirectStandardError = true,
-                                        RedirectStandardOutput = true,
-                                        UseShellExecute = false
-                                    }
-                            })
-                        {
-                            process.Start();
-                            process.WaitForExit();
-                        }
-                        break;
-                }
+                CreateSTBLizePlusDirectoryFile(outputPath);
             }
             return outputPath + Path.DirectorySeparatorChar + Path.GetFileName(pathWithoutExtension) + ".stbl";
         }
@@ -303,38 +292,10 @@ namespace Destrospean.STBLizePlus
                     newEntries[entry.Key] = entry.Value;
                 }
             }
-            var outputPath = options.OutputDirectory ?? (File.Exists(Path.GetDirectoryName(pathWithoutExtension) + Path.DirectorySeparatorChar + OutputDirectoryFilename) ? Path.GetDirectoryName(Path.GetDirectoryName(pathWithoutExtension)) : Path.GetDirectoryName(pathWithoutExtension)) + Path.DirectorySeparatorChar + Path.GetFileName(pathWithoutExtension) + "_XML+YAML_" + CurrentTime;
+            var outputPath = options.OutputDirectory ?? (File.Exists(Path.GetDirectoryName(pathWithoutExtension) + Path.DirectorySeparatorChar + STBLizePlusDirectoryFilename) ? Path.GetDirectoryName(Path.GetDirectoryName(pathWithoutExtension)) : Path.GetDirectoryName(pathWithoutExtension)) + Path.DirectorySeparatorChar + Path.GetFileName(pathWithoutExtension) + "_XML+YAML_" + CurrentTime;
             if (!Directory.Exists(outputPath))
             {
-                Directory.CreateDirectory(outputPath);
-                var createdDirectoryFilePath = outputPath + Path.DirectorySeparatorChar + OutputDirectoryFilename;
-                using (var output = File.Create(createdDirectoryFilePath))
-                {
-                }
-                switch ((int)Environment.OSVersion.Platform)
-                {
-                    case 4:
-                    case 128:
-                        break;
-                    default:
-                        using (var process = new Process
-                            {
-                                StartInfo = new ProcessStartInfo
-                                    {
-                                        Arguments = "+h \"" + createdDirectoryFilePath + "\"",
-                                        CreateNoWindow = true,
-                                        FileName = "attrib",
-                                        RedirectStandardError = true,
-                                        RedirectStandardOutput = true,
-                                        UseShellExecute = false
-                                    }
-                            })
-                        {
-                            process.Start();
-                            process.WaitForExit();
-                        }
-                        break;
-                }
+                CreateSTBLizePlusDirectoryFile(outputPath);
             }
             var filename = options.OutputFilename ?? Path.GetFileName(pathWithoutExtension);
             if (!options.XmlOnly && !options.YamlOnly)
