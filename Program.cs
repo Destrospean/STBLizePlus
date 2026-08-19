@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.IO;
-using System.Text;
-using System.Xml;
 using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 
@@ -12,19 +8,30 @@ namespace Destrospean.STBLizePlus
 {
     public static class Program
     {
-        public static readonly string ArbitraryMaleSuffix = "{DESTROSPEAN_STBL_MALE_SUFFIX_" + Guid.NewGuid() + "}",
-        ArbitrarySeparator = "{DESTROSPEAN_STBL_SEPARATOR_" + Guid.NewGuid() + "}",
-        STBLizePlusDirectoryFilename = ".IS_CREATED_STBLIZE+_DIR";
-
-        public static ulong CurrentTime
+        public class Options
         {
-            get
-            {
-                return ulong.Parse(DateTime.Now.ToString("yyyyMMddHHmmss"));
-            }
+            public bool NoUnhashed = false,
+            UnhashedOnly = false,
+            XmlOnly = false,
+            YamlOnly = false;
+
+            public string OutputDirectory,
+            OutputFilename,
+            UnhashedFilename = "Unhashed.stbl";
         }
 
-        public static readonly IDictionary<OptionNames, string[]> OptionsDictionary = new Dictionary<OptionNames, string[]>
+        public enum OptionNames
+        {
+            OutputDirectory,
+            OutputFilename,
+            UnhashedFilename,
+            NoUnhashed,
+            UnhashedOnly,
+            XmlOnly,
+            YamlOnly
+        }
+
+        public static readonly System.Collections.Generic.IDictionary<OptionNames, string[]> OptionsDictionary = new System.Collections.Generic.Dictionary<OptionNames, string[]>
         {
             {
                 OptionNames.OutputDirectory,
@@ -96,29 +103,6 @@ namespace Destrospean.STBLizePlus
             }
         };
 
-        public class Options
-        {
-            public bool NoUnhashed = false,
-            UnhashedOnly = false,
-            XmlOnly = false,
-            YamlOnly = false;
-
-            public string OutputDirectory,
-            OutputFilename,
-            UnhashedFilename = "Unhashed.stbl";
-        }
-
-        public enum OptionNames
-        {
-            OutputDirectory,
-            OutputFilename,
-            UnhashedFilename,
-            NoUnhashed,
-            UnhashedOnly,
-            XmlOnly,
-            YamlOnly
-        }
-
         public static void CheckForOption(this Options options, OptionNames option, string current, ref bool skip)
         {
             for (var i = 1; !skip && i < OptionsDictionary[option].Length; i++)
@@ -132,58 +116,17 @@ namespace Destrospean.STBLizePlus
             }
         }
 
-        public static void CheckForValue(this Options options, OptionNames option, string current, string previous, ref bool confirmed)
+        public static void CheckForValue(this Options options, OptionNames option, string current, string previous, ref bool skip)
         {
-            for (var i = 1; !confirmed && i < OptionsDictionary[option].Length; i++)
+            for (var i = 1; !skip && i < OptionsDictionary[option].Length; i++)
             {
                 if (previous == OptionsDictionary[option][i])
                 {
                     options.GetType().GetField(option.ToString()).SetValue(options, current);
-                    confirmed = true;
+                    skip = true;
                     break;
                 }
             }
-        }
-
-        public static void CreateSTBLizePlusDirectoryFile(string directoryPath)
-        {
-            Directory.CreateDirectory(directoryPath);
-            var createdDirectoryFilePath = directoryPath + Path.DirectorySeparatorChar + STBLizePlusDirectoryFilename;
-            using (var output = File.Create(createdDirectoryFilePath))
-            {
-            }
-            switch ((int)Environment.OSVersion.Platform)
-            {
-                case 4:
-                case 128:
-                    break;
-                default:
-                    File.SetAttributes(createdDirectoryFilePath, File.GetAttributes(createdDirectoryFilePath) | FileAttributes.Hidden);
-                    break;
-            }
-        }
-
-        public static ulong GetFNV64(string value)
-        {
-            var hash = 0xCBF29CE484222325;
-            foreach (var b in Encoding.UTF8.GetBytes(value.ToLowerInvariant()))
-            {
-                hash *= 0x100000001B3;
-                hash &= 0xFFFFFFFFFFFFFFFF;
-                hash ^= b;
-            }
-            return hash;
-        }
-
-        public static string GetOutputPath(string path, Options options)
-        {
-            var pathWithoutExtension = Path.GetFullPath(path.Contains(".") ? path.Substring(0, path.LastIndexOf(".")) : path);
-            var outputPath = options.OutputDirectory ?? (File.Exists(Path.GetDirectoryName(pathWithoutExtension) + Path.DirectorySeparatorChar + STBLizePlusDirectoryFilename) ? Path.GetDirectoryName(Path.GetDirectoryName(pathWithoutExtension)) : Path.GetDirectoryName(pathWithoutExtension)) + Path.DirectorySeparatorChar + Path.GetFileName(pathWithoutExtension) + "_STBL_" + CurrentTime;
-            if (!Directory.Exists(outputPath))
-            {
-                CreateSTBLizePlusDirectoryFile(outputPath);
-            }
-            return outputPath + Path.DirectorySeparatorChar + Path.GetFileName(pathWithoutExtension) + ".stbl";
         }
 
         public static void PrintArguments()
@@ -222,10 +165,10 @@ namespace Destrospean.STBLizePlus
             try
             {
                 // Everything here executes if the file is a valid XML
-                var entries = new OrderedDictionary();
+                var entries = new System.Collections.Specialized.OrderedDictionary();
                 using (var input = new FileStream(path, FileMode.Open, FileAccess.Read))
                 {
-                    var reader = XmlReader.Create(input);
+                    var reader = System.Xml.XmlReader.Create(input);
                     reader.ReadStartElement("TEXT");
                     while (reader.ReadToNextSibling("KEY"))
                     {
@@ -238,7 +181,7 @@ namespace Destrospean.STBLizePlus
                     return entries;
                 }
             }
-            catch (XmlException)
+            catch (System.Xml.XmlException)
             {
             }
             try
@@ -252,168 +195,12 @@ namespace Destrospean.STBLizePlus
             throw new ArgumentException("File must be a valid JSON, XML, or YAML", path);
         }
 
-        public static IDictionary ReadStbl(string path)
-        {
-            try
-            {
-                var entries = new OrderedDictionary();
-                using (var input = new FileStream(path, FileMode.Open, FileAccess.Read))
-                {
-                    using (var reader = new BinaryReader(input, Encoding.Unicode))
-                    {
-                        reader.ReadBytes(7);
-                        var count = reader.ReadInt32();
-                        reader.ReadBytes(6);
-                        for (var i = 0; i < count; i++)
-                        {
-                            var id = reader.ReadUInt64();
-                            entries[id] = new string(reader.ReadChars(reader.ReadInt32()));
-                        }
-                    }
-                }
-                return entries;
-            }
-            catch
-            {
-                throw new ArgumentException("File must be a valid STBL");
-            }
-        }
-
-        public static void WriteEntryPair(BinaryWriter writer, string key, string value)
-        {
-            writer.Write(GetFNV64(key));
-            writer.Write(value.Length);
-            writer.Write(value.ToCharArray());
-        }
-
-        public static void WriteErrorLog(string path, Exception ex)
-        {
-            using (var output = new FileStream(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(path)), string.IsNullOrEmpty(path) ? "stbl.log" : Path.GetFileNameWithoutExtension(path) + ".log"), FileMode.Create, FileAccess.Write))
-            {
-                using (var writer = new StreamWriter(output, Encoding.UTF8))
-                {
-                    writer.WriteLine(ex.GetType().Name + " - " + ex.Message);
-                    writer.WriteLine(ex.StackTrace);
-                }
-            }
-        }
-
-        public static void WritePlaintext(string path, Options options)
-        {
-            string[] suffixes = new[]
-                {
-                    "_Female",
-                    "_FemaleFemale",
-                    "_MaleFemale"
-                };
-            var pathWithoutExtension = Path.GetFullPath(path.Contains(".") ? path.Substring(0, path.LastIndexOf(".")) : path);
-            var stblEntries = ReadStbl(path);
-            IDictionary entries = new OrderedDictionary(),
-            newEntries = new OrderedDictionary();
-            var keysToReplace = new List<string>();
-            foreach (DictionaryEntry entry in ReadStbl(Path.GetDirectoryName(pathWithoutExtension) + Path.DirectorySeparatorChar + options.UnhashedFilename))
-            {
-                var value = entry.Value.ToString().Replace("/", ArbitrarySeparator + "/").Replace(":", ArbitrarySeparator + ":");
-                foreach (var suffix in suffixes)
-                {
-                    if (value.ToLowerInvariant().EndsWith(suffix.ToLowerInvariant()))
-                    {
-                        keysToReplace.Add(value.Substring(0, value.ToLowerInvariant().LastIndexOf(suffix.ToLowerInvariant())));
-                    }
-                }
-                entries[value] = stblEntries[entry.Key];
-            }
-            foreach (DictionaryEntry entry in entries)
-            {
-                if (keysToReplace.Contains(entry.Key.ToString()))
-                {
-                    newEntries[entry.Key + ArbitrarySeparator + ArbitraryMaleSuffix] = entry.Value;
-                    continue;
-                }
-                var hasNoSuffix = true;
-                foreach (var suffix in suffixes)
-                {
-                    if (entry.Key.ToString().ToLowerInvariant().EndsWith(suffix.ToLowerInvariant()))
-                    {
-                        newEntries[entry.Key.ToString().Substring(0, entry.Key.ToString().ToLowerInvariant().LastIndexOf(suffix.ToLowerInvariant())) + ArbitrarySeparator + suffix] = entry.Value;
-                        hasNoSuffix = false;
-                        break;
-                    }
-                }
-                if (hasNoSuffix)
-                {
-                    newEntries[entry.Key] = entry.Value;
-                }
-            }
-            var outputPath = options.OutputDirectory ?? (File.Exists(Path.GetDirectoryName(pathWithoutExtension) + Path.DirectorySeparatorChar + STBLizePlusDirectoryFilename) ? Path.GetDirectoryName(Path.GetDirectoryName(pathWithoutExtension)) : Path.GetDirectoryName(pathWithoutExtension)) + Path.DirectorySeparatorChar + Path.GetFileName(pathWithoutExtension) + "_XML+YAML_" + CurrentTime;
-            if (!Directory.Exists(outputPath))
-            {
-                CreateSTBLizePlusDirectoryFile(outputPath);
-            }
-            var filename = options.OutputFilename ?? Path.GetFileName(pathWithoutExtension);
-            if (!options.XmlOnly && !options.YamlOnly)
-            {
-                filename = Path.GetFileNameWithoutExtension(filename);
-            }
-            // Write the XML file
-            if (!options.YamlOnly)
-            {
-                using (var output = new FileStream(outputPath + Path.DirectorySeparatorChar + filename + (options.XmlOnly ? "" : ".xml"), FileMode.Create, FileAccess.Write))
-                {
-                    using (var writer = new StreamWriter(output, Encoding.UTF8))
-                    {
-                        WriteXml(newEntries, writer);
-                    }
-                }
-            }
-            // Write the YAML file
-            if (!options.XmlOnly)
-            {
-                using (var output = new FileStream(outputPath + Path.DirectorySeparatorChar + filename + (options.YamlOnly ? "" : ".yaml"), FileMode.Create, FileAccess.Write))
-                {
-                    using (var writer = new StreamWriter(output, Encoding.UTF8))
-                    {
-                        WriteYaml(newEntries.Unflatten(ArbitrarySeparator), writer);
-                    }
-                }
-            }
-            Console.WriteLine(Path.GetFullPath(outputPath));
-        }
-
-        public static void WriteStbl(string path, IDictionary entries, bool keysAsValues = false)
-        {
-            using (var output = new FileStream(path, FileMode.Create, FileAccess.Write))
-            {
-                using (var writer = new BinaryWriter(output, Encoding.Unicode))
-                {
-                    writer.Write(new byte[]
-                        {
-                            83,
-                            84,
-                            66,
-                            76
-                        });
-                    writer.Write(new byte[]
-                        {
-                            2
-                        });
-                    writer.Write(new byte[2]);
-                    writer.Write(entries.Count);
-                    writer.Write(new byte[6]);
-                    foreach (DictionaryEntry entry in entries)
-                    {
-                        WriteEntryPair(writer, entry.Key.ToString(), keysAsValues ? entry.Key.ToString() : entry.Value.ToString());
-                    }
-                }
-            }
-        }
-
         public static void WriteXml(IDictionary entries, StreamWriter writer)
         {
             writer.WriteLine("<?xml version=\"1.0\" ?>" + Environment.NewLine + "<TEXT>" + Environment.NewLine);
             foreach (DictionaryEntry entry in entries)
             {
-                writer.WriteLine("<KEY>" + (entry.Key.ToString().EndsWith(ArbitraryMaleSuffix) ? entry.Key.ToString().Substring(0, entry.Key.ToString().LastIndexOf(ArbitraryMaleSuffix)) : entry.Key.ToString()).Replace(ArbitrarySeparator, "") + "</KEY>" + Environment.NewLine + "<STR>" + entry.Value + "</STR>" + Environment.NewLine);
+                writer.WriteLine("<KEY>" + (entry.Key.ToString().EndsWith(Utils.ArbitraryMaleSuffix) ? entry.Key.ToString().Substring(0, entry.Key.ToString().LastIndexOf(Utils.ArbitraryMaleSuffix)) : entry.Key.ToString()).Replace(Utils.ArbitrarySeparator, "") + "</KEY>" + Environment.NewLine + "<STR>" + entry.Value + "</STR>" + Environment.NewLine);
             }
             writer.WriteLine("</TEXT>");
         }
@@ -430,7 +217,7 @@ namespace Destrospean.STBLizePlus
                 var dictionary = entry.Value as IDictionary;
                 if (dictionary == null)
                 {
-                    writer.WriteLine(indentation + "\"" + (entry.Key.ToString().EndsWith(ArbitraryMaleSuffix) ? entry.Key.ToString().Substring(0, entry.Key.ToString().LastIndexOf(ArbitraryMaleSuffix)) : entry.Key.ToString()) + "\": \"" + entry.Value + "\"");
+                    writer.WriteLine(indentation + "\"" + (entry.Key.ToString().EndsWith(Utils.ArbitraryMaleSuffix) ? entry.Key.ToString().Substring(0, entry.Key.ToString().LastIndexOf(Utils.ArbitraryMaleSuffix)) : entry.Key.ToString()) + "\": \"" + entry.Value + "\"");
                     continue;
                 }
                 writer.WriteLine(indentation + "\"" + entry.Key + "\":");
@@ -445,7 +232,7 @@ namespace Destrospean.STBLizePlus
                 PrintArguments();
             }
             var options = new Options();
-            var positionalArgs = new List<string>();
+            var positionalArgs = new System.Collections.Generic.List<string>();
             if (args.Length > 0)
             {
                 for (var i = 0; i < args.Length; i++)
@@ -477,34 +264,60 @@ namespace Destrospean.STBLizePlus
             {
                 using (var input = new FileStream(path, FileMode.Open, FileAccess.Read))
                 {
-                    using (var reader = new BinaryReader(input, Encoding.Unicode))
+                    using (var reader = new BinaryReader(input, System.Text.Encoding.Unicode))
                     {
                         if (reader.ReadUInt32() == 0x4C425453)
                         {
-                            WritePlaintext(path, options);
+                            Utils.WritePlaintext(path, options.UnhashedFilename, options.OutputDirectory, options.OutputFilename, (directory, filename, newEntries) => 
+                                {
+                                    if (!options.XmlOnly && !options.YamlOnly)
+                                    {
+                                        filename = Path.GetFileNameWithoutExtension(filename);
+                                    }
+                                    if (!options.YamlOnly)
+                                    {
+                                        using (var output = new FileStream(directory + Path.DirectorySeparatorChar + filename + (options.XmlOnly ? "" : ".xml"), FileMode.Create, FileAccess.Write))
+                                        {
+                                            using (var writer = new StreamWriter(output, System.Text.Encoding.UTF8))
+                                            {
+                                                WriteXml(newEntries, writer);
+                                            }
+                                        }
+                                    }
+                                    if (!options.XmlOnly)
+                                    {
+                                        using (var output = new FileStream(directory + Path.DirectorySeparatorChar + filename + (options.YamlOnly ? "" : ".yaml"), FileMode.Create, FileAccess.Write))
+                                        {
+                                            using (var writer = new StreamWriter(output, System.Text.Encoding.UTF8))
+                                            {
+                                                WriteYaml(newEntries.Unflatten(Utils.ArbitrarySeparator), writer);
+                                            }
+                                        }
+                                    }
+                                });
                             return;
                         }
                     }
                 }
                 var entries = ReadInputFile(path);
-                var outputPath = GetOutputPath(path, options);
+                var outputPath = Utils.GetOutputPath(path, options.OutputDirectory);
                 if (options.OutputFilename == null)
                 {
                     options.OutputFilename = Path.GetFileName(outputPath);
                 }
                 if (!options.UnhashedOnly)
                 {
-                    WriteStbl(Path.GetDirectoryName(outputPath) + Path.DirectorySeparatorChar + options.OutputFilename, entries);
+                    Utils.WriteStbl(Path.GetDirectoryName(outputPath) + Path.DirectorySeparatorChar + options.OutputFilename, entries);
                 }
                 if (!options.NoUnhashed)
                 {
-                    WriteStbl(Path.GetDirectoryName(outputPath) + Path.DirectorySeparatorChar + options.UnhashedFilename, entries, true);
+                    Utils.WriteStbl(Path.GetDirectoryName(outputPath) + Path.DirectorySeparatorChar + options.UnhashedFilename, entries, true);
                 }
                 Console.WriteLine(Path.GetFullPath(Path.GetDirectoryName(outputPath)));
             }
             catch (Exception ex)
             {
-                WriteErrorLog(path, ex);
+                Utils.WriteErrorLog(path, ex);
                 throw;
             }
         }
