@@ -149,9 +149,9 @@ namespace Destrospean.STBLizePlus
             return hash;
         }
 
-        public static string GetOutputPath(string[] paths, Options options)
+        public static string GetOutputPath(string path, Options options)
         {
-            var pathWithoutExtension = Path.GetFullPath(paths[0].Contains(".") ? paths[0].Substring(0, paths[0].LastIndexOf(".")) : paths[0]);
+            var pathWithoutExtension = Path.GetFullPath(path.Contains(".") ? path.Substring(0, path.LastIndexOf(".")) : path);
             var outputPath = options.OutputDirectory ?? (File.Exists(Path.GetDirectoryName(pathWithoutExtension) + Path.DirectorySeparatorChar + STBLizePlusDirectoryFilename) ? Path.GetDirectoryName(Path.GetDirectoryName(pathWithoutExtension)) : Path.GetDirectoryName(pathWithoutExtension)) + Path.DirectorySeparatorChar + Path.GetFileName(pathWithoutExtension) + "_STBL_" + CurrentTime;
             if (!Directory.Exists(outputPath))
             {
@@ -233,9 +233,9 @@ namespace Destrospean.STBLizePlus
             writer.Write(value.ToCharArray());
         }
 
-        public static void WriteErrorLog(string[] paths, Exception ex)
+        public static void WriteErrorLog(string path, Exception ex)
         {
-            using (var output = new FileStream(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(paths[0])), string.IsNullOrEmpty(paths[0]) ? "stbl.log" : Path.GetFileNameWithoutExtension(paths[0]) + ".log"), FileMode.Create, FileAccess.Write))
+            using (var output = new FileStream(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(path)), string.IsNullOrEmpty(path) ? "stbl.log" : Path.GetFileNameWithoutExtension(path) + ".log"), FileMode.Create, FileAccess.Write))
             {
                 using (var writer = new StreamWriter(output, Encoding.UTF8))
                 {
@@ -245,7 +245,7 @@ namespace Destrospean.STBLizePlus
             }
         }
 
-        public static void WritePlaintext(string[] paths, Options options)
+        public static void WritePlaintext(string path, Options options)
         {
             string[] suffixes = new[]
                 {
@@ -253,8 +253,8 @@ namespace Destrospean.STBLizePlus
                     "_FemaleFemale",
                     "_MaleFemale"
                 };
-            var pathWithoutExtension = Path.GetFullPath(paths[0].Contains(".") ? paths[0].Substring(0, paths[0].LastIndexOf(".")) : paths[0]);
-            var stblEntries = ReadStbl(paths[0]);
+            var pathWithoutExtension = Path.GetFullPath(path.Contains(".") ? path.Substring(0, path.LastIndexOf(".")) : path);
+            var stblEntries = ReadStbl(path);
             IDictionary entries = new OrderedDictionary(),
             newEntries = new OrderedDictionary();
             var keysToReplace = new List<string>();
@@ -501,13 +501,13 @@ namespace Destrospean.STBLizePlus
                     {
                         if (reader.ReadUInt32() == 0x4C425453)
                         {
-                            WritePlaintext(paths.ToArray(), options);
+                            WritePlaintext(paths[0], options);
                             return;
                         }
                     }
                 }
                 var entries = ReadInputFile(paths[0]);
-                var outputPath = GetOutputPath(paths.ToArray(), options);
+                var outputPath = GetOutputPath(paths[0], options);
                 if (options.OutputFilename == null)
                 {
                     options.OutputFilename = Path.GetFileName(outputPath);
@@ -524,7 +524,7 @@ namespace Destrospean.STBLizePlus
             }
             catch (Exception ex)
             {
-                WriteErrorLog(paths.ToArray(), ex);
+                WriteErrorLog(paths[0], ex);
                 throw;
             }
         }
