@@ -10,7 +10,7 @@ using YamlDotNet.Serialization;
 
 namespace Destrospean.STBLizePlus
 {
-    public class Program
+    public static class Program
     {
         public static readonly string ArbitraryMaleSuffix = "{DESTROSPEAN_STBL_MALE_SUFFIX_" + Guid.NewGuid() + "}",
         ArbitrarySeparator = "{DESTROSPEAN_STBL_SEPARATOR_" + Guid.NewGuid() + "}",
@@ -119,6 +119,32 @@ namespace Destrospean.STBLizePlus
             YamlOnly
         }
 
+        public static void CheckForOption(this Options options, OptionNames option, string current, ref bool skip)
+        {
+            for (var i = 1; !skip && i < OptionsDictionary[option].Length; i++)
+            {
+                if (current == OptionsDictionary[option][i])
+                {
+                    options.GetType().GetField(option.ToString()).SetValue(options, true);
+                    skip = true;
+                    break;
+                }
+            }
+        }
+
+        public static void CheckForValue(this Options options, OptionNames option, string current, string previous, ref bool confirmed)
+        {
+            for (var i = 1; !confirmed && i < OptionsDictionary[option].Length; i++)
+            {
+                if (previous == OptionsDictionary[option][i])
+                {
+                    options.GetType().GetField(option.ToString()).SetValue(options, current);
+                    confirmed = true;
+                    break;
+                }
+            }
+        }
+
         public static void CreateSTBLizePlusDirectoryFile(string directoryPath)
         {
             Directory.CreateDirectory(directoryPath);
@@ -158,6 +184,33 @@ namespace Destrospean.STBLizePlus
                 CreateSTBLizePlusDirectoryFile(outputPath);
             }
             return outputPath + Path.DirectorySeparatorChar + Path.GetFileName(pathWithoutExtension) + ".stbl";
+        }
+
+        public static void PrintArguments()
+        {
+            Console.WriteLine("Usage: " + AppDomain.CurrentDomain.FriendlyName + " <Input Filename> [Options]" + Environment.NewLine);
+            var maxLength = 0;
+            foreach (OptionNames option in Enum.GetValues(typeof(OptionNames)))
+            {
+                var text = string.Join(", ", OptionsDictionary[option]);
+                text = text.Substring(text.IndexOf(",") + 2);
+                if (text.Length > maxLength)
+                {
+                    maxLength = text.Length;
+                }
+            }
+            foreach (OptionNames option in Enum.GetValues(typeof(OptionNames)))
+            {
+                string text = string.Join(", ", OptionsDictionary[option]),
+                whitespace = null;
+                text = text.Substring(text.IndexOf(",") + 2);
+                for (var i = 0; i < maxLength - text.Length; i++)
+                {
+                    whitespace += " ";
+                }
+                Console.WriteLine("    " + text + whitespace + "    " + OptionsDictionary[option][0]);
+            }
+            Console.WriteLine();
         }
 
         public static IDictionary ReadInputFile(string path)
@@ -389,125 +442,52 @@ namespace Destrospean.STBLizePlus
         {
             if (args.Length == 0)
             {
-                Console.WriteLine("Usage: " + AppDomain.CurrentDomain.FriendlyName + " <Input Filename> [Options]" + Environment.NewLine);
-                var maxLength = 0;
-                foreach (OptionNames option in Enum.GetValues(typeof(OptionNames)))
-                {
-                    var text = string.Join(", ", OptionsDictionary[option]);
-                    text = text.Substring(text.IndexOf(",") + 2);
-                    if (text.Length > maxLength)
-                    {
-                        maxLength = text.Length;
-                    }
-                }
-                foreach (OptionNames option in Enum.GetValues(typeof(OptionNames)))
-                {
-                    string text = string.Join(", ", OptionsDictionary[option]),
-                    whitespace = null;
-                    text = text.Substring(text.IndexOf(",") + 2);
-                    for (var i = 0; i < maxLength - text.Length; i++)
-                    {
-                        whitespace += " ";
-                    }
-                    Console.WriteLine("    " + text + whitespace + "    " + OptionsDictionary[option][0]);
-                }
-                Console.WriteLine();
+                PrintArguments();
             }
             var options = new Options();
-            var paths = new List<string>();
-            try
+            var positionalArgs = new List<string>();
+            if (args.Length > 0)
             {
-                if (args.Length > 0)
+                for (var i = 0; i < args.Length; i++)
                 {
-                    for (var i = 0; i < args.Length; i++)
+                    var skip = false;
+                    if (i > 0 && args[i - 1].StartsWith("-"))
                     {
-                        var skip = false;
-                        if (i > 0 && args[i - 1].StartsWith("-"))
-                        {
-                            for (var j = 1; !skip && j < OptionsDictionary[OptionNames.OutputDirectory].Length; j++)
-                            {
-                                if (args[i - 1] == OptionsDictionary[OptionNames.OutputDirectory][j])
-                                {
-                                    options.OutputDirectory = args[i];
-                                    skip = true;
-                                    break;
-                                }
-                            }
-                            for (var j = 1; !skip && j < OptionsDictionary[OptionNames.OutputFilename].Length; j++)
-                            {
-                                if (args[i - 1] == OptionsDictionary[OptionNames.OutputFilename][j])
-                                {
-                                    options.OutputFilename = args[i];
-                                    skip = true;
-                                    break;
-                                }
-                            }
-                            for (var j = 1; !skip && j < OptionsDictionary[OptionNames.UnhashedFilename].Length; j++)
-                            {
-                                if (args[i - 1] == OptionsDictionary[OptionNames.UnhashedFilename][j])
-                                {
-                                    options.UnhashedFilename = args[i];
-                                    skip = true;
-                                    break;
-                                }
-                            }
-                        }
-                        for (var j = 1; !skip && j < OptionsDictionary[OptionNames.NoUnhashed].Length; j++)
-                        {
-                            if (args[i] == OptionsDictionary[OptionNames.NoUnhashed][j])
-                            {
-                                skip = options.NoUnhashed = true;
-                                break;
-                            }
-                        }
-                        for (var j = 1; !skip && j < OptionsDictionary[OptionNames.UnhashedOnly].Length; j++)
-                        {
-                            if (args[i] == OptionsDictionary[OptionNames.UnhashedOnly][j])
-                            {
-                                skip = options.UnhashedOnly = true;
-                                break;
-                            }
-                        }
-                        for (var j = 1; !skip && j < OptionsDictionary[OptionNames.XmlOnly].Length; j++)
-                        {
-                            if (args[i] == OptionsDictionary[OptionNames.XmlOnly][j])
-                            {
-                                skip = options.XmlOnly = true;
-                                break;
-                            }
-                        }
-                        for (var j = 1; !skip && j < OptionsDictionary[OptionNames.YamlOnly].Length; j++)
-                        {
-                            if (args[i] == OptionsDictionary[OptionNames.YamlOnly][j])
-                            {
-                                skip = options.YamlOnly = true;
-                                break;
-                            }
-                        }
-                        if (!skip && !args[i].StartsWith("-"))
-                        {
-                            paths.Add(args[i]);
-                        }
+                        options.CheckForValue(OptionNames.OutputDirectory, args[i], args[i - 1], ref skip);
+                        options.CheckForValue(OptionNames.OutputFilename, args[i], args[i - 1], ref skip);
+                        options.CheckForValue(OptionNames.UnhashedFilename, args[i], args[i - 1], ref skip);
+                    }
+                    options.CheckForOption(OptionNames.NoUnhashed, args[i], ref skip);
+                    options.CheckForOption(OptionNames.UnhashedOnly, args[i], ref skip);
+                    options.CheckForOption(OptionNames.XmlOnly, args[i], ref skip);
+                    options.CheckForOption(OptionNames.YamlOnly, args[i], ref skip);
+                    if (!skip && !args[i].StartsWith("-"))
+                    {
+                        positionalArgs.Add(args[i]);
                     }
                 }
-                if (paths.Count == 0)
-                {
-                    Console.Error.WriteLine("No input filename specified");
-                    return;
-                }
-                using (var input = new FileStream(paths[0], FileMode.Open, FileAccess.Read))
+            }
+            if (positionalArgs.Count == 0)
+            {
+                Console.Error.WriteLine("No input filename specified");
+                return;
+            }
+            var path = positionalArgs[0];
+            try
+            {
+                using (var input = new FileStream(path, FileMode.Open, FileAccess.Read))
                 {
                     using (var reader = new BinaryReader(input, Encoding.Unicode))
                     {
                         if (reader.ReadUInt32() == 0x4C425453)
                         {
-                            WritePlaintext(paths[0], options);
+                            WritePlaintext(path, options);
                             return;
                         }
                     }
                 }
-                var entries = ReadInputFile(paths[0]);
-                var outputPath = GetOutputPath(paths[0], options);
+                var entries = ReadInputFile(path);
+                var outputPath = GetOutputPath(path, options);
                 if (options.OutputFilename == null)
                 {
                     options.OutputFilename = Path.GetFileName(outputPath);
@@ -524,7 +504,7 @@ namespace Destrospean.STBLizePlus
             }
             catch (Exception ex)
             {
-                WriteErrorLog(paths[0], ex);
+                WriteErrorLog(path, ex);
                 throw;
             }
         }
