@@ -19,6 +19,13 @@ namespace Destrospean.STBLizePlus
             }
         }
 
+        static void WriteEntryPair(BinaryWriter writer, string key, string value)
+        {
+            writer.Write(GetFnv64(key));
+            writer.Write(value.Length);
+            writer.Write(value.ToCharArray());
+        }
+
         public static void CreateSTBLizePlusDirectoryFile(string directory)
         {
             Directory.CreateDirectory(directory);
@@ -85,13 +92,6 @@ namespace Destrospean.STBLizePlus
             {
                 throw new ArgumentException("File must be a valid STBL");
             }
-        }
-
-        public static void WriteEntryPair(BinaryWriter writer, string key, string value)
-        {
-            writer.Write(GetFnv64(key));
-            writer.Write(value.Length);
-            writer.Write(value.ToCharArray());
         }
 
         public static void WriteErrorLog(string path, Exception ex)
