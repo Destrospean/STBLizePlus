@@ -17,7 +17,7 @@ namespace Destrospean.STBLizePlus
             return string.IsNullOrEmpty(previousKey) ? newKey.ToString() : string.Format("{0}{1}{2}", previousKey, separator, newKey);
         }
 
-        public static IDictionary Flatten(this IDictionary dictionary, string separator = "_", IEnumerable<string> rootKeysToIgnore = null, string replaceSeparators = null, bool flattenLists = true)
+        public static IDictionary Flatten(this IDictionary dictionary, string separator = ".", IEnumerable<string> rootKeysToIgnore = null, string replaceSeparators = null, bool flattenLists = true)
         {
             if (rootKeysToIgnore == null)
             {
@@ -63,7 +63,7 @@ namespace Destrospean.STBLizePlus
             return flattenedDictionary;
         }
 
-        public static IDictionary Unflatten(this IDictionary dictionary, string separator = "_", bool listsAreFlat = true)
+        public static IDictionary Unflatten(this IDictionary dictionary, string separator = ".", bool listsAreFlat = true)
         {
             var unflattenedDictionary = new OrderedDictionary();
             Action<IDictionary, IEnumerable<string>, object> unflatten = null;

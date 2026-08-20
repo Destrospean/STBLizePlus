@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Destrospean.STBLizePlus
 {
@@ -15,7 +16,7 @@ namespace Destrospean.STBLizePlus
             YamlOnly
         }
 
-        static readonly System.Collections.Generic.IDictionary<Names, string[]> sDictionary = new System.Collections.Generic.Dictionary<Names, string[]>
+        static readonly IDictionary<Names, string[]> sDictionary = new Dictionary<Names, string[]>
         {
             {
                 Names.OutputDirectory,
@@ -122,29 +123,50 @@ namespace Destrospean.STBLizePlus
             }
         }
 
-        public static void Print()
+        public static void PrintAll()
         {
             Console.WriteLine("Usage: " + AppDomain.CurrentDomain.FriendlyName + " <Input Filename> [Options]" + Environment.NewLine);
+            var argLists = new Dictionary<Names, string>();
             var maxLength = 0;
-            foreach (Names option in Enum.GetValues(typeof(Names)))
+            foreach (Names name in Enum.GetValues(typeof(Names)))
             {
-                var text = string.Join(", ", sDictionary[option]);
-                text = text.Substring(text.IndexOf(",") + 2);
-                if (text.Length > maxLength)
+                argLists[name] = string.Join(", ", new List<string>(sDictionary[name]).GetRange(1, sDictionary[name].Length - 1));
+                if (argLists[name].Length > maxLength)
                 {
-                    maxLength = text.Length;
+                    maxLength = argLists[name].Length;
                 }
             }
-            foreach (Names option in Enum.GetValues(typeof(Names)))
+            var lineGroups = new List<List<string>>();
+            foreach (Names name in Enum.GetValues(typeof(Names)))
             {
-                string text = string.Join(", ", sDictionary[option]),
-                whitespace = null;
-                text = text.Substring(text.IndexOf(",") + 2);
-                for (var i = 0; i < maxLength - text.Length; i++)
+                var gap = "";
+                for (var i = 0; i < maxLength - argLists[name].Length; i++)
                 {
-                    whitespace += " ";
+                    gap += " ";
                 }
-                Console.WriteLine("    " + text + whitespace + "    " + sDictionary[option][0]);
+                lineGroups.Add(new List<string>
+                    {
+                        "    " + argLists[name] + gap + "    " + sDictionary[name][0]
+                    });
+            }
+            var indentation = "";
+            for (var i = 0; i < maxLength + 7; i++)
+            {
+                indentation += " ";
+            }
+            foreach (var lines in lineGroups)
+            {
+                var lastIndex = 0;
+                while (Console.WindowWidth > maxLength + 7 && lines[lastIndex].Length > Console.WindowWidth)
+                {
+                    var offset = Console.WindowWidth - lines[lastIndex].Substring(0, Console.WindowWidth + 1).LastIndexOf(" ");
+                    lines.Add(indentation + lines[lastIndex].Substring(Console.WindowWidth - offset));
+                    lines[lastIndex] = lines[lastIndex++].Remove(Console.WindowWidth - offset);
+                }
+                foreach (var line in lines)
+                {
+                    Console.WriteLine(line);
+                }
             }
             Console.WriteLine();
         }
