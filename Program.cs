@@ -6,7 +6,7 @@ using YamlDotNet.Serialization;
 
 namespace Destrospean.STBLizePlus
 {
-    public static class Program
+    public class Program
     {
         public static void Main(string[] args)
         {
