@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Destrospean.STBLizePlus
 {
@@ -125,7 +126,31 @@ namespace Destrospean.STBLizePlus
 
         public static void PrintAll()
         {
-            Console.WriteLine("Usage: " + AppDomain.CurrentDomain.FriendlyName + " <Input Filename> [Options]" + Environment.NewLine);
+            string entryCommand = null;
+            switch ((int)Environment.OSVersion.Platform)
+            {
+                case 4:
+                case 128:
+                    using (var process = Process.Start(new ProcessStartInfo
+                        {
+                            FileName = "pgrep",
+                            Arguments = "-a -p " + Process.GetCurrentProcess().Id,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        }))
+                    {
+                        if (process != null)
+                        {
+                            var result = process.StandardOutput.ReadToEnd();
+                            process.WaitForExit();
+                            entryCommand = result.Substring(result.IndexOf(Process.GetCurrentProcess().Id.ToString()) + Process.GetCurrentProcess().Id.ToString().Length + 1).TrimEnd();
+                        }
+                    }
+                    break;
+            }
+            Console.WriteLine("Usage: " + (entryCommand ?? System.IO.Path.GetFileNameWithoutExtension(AppDomain.CurrentDomain.FriendlyName)) + " <Input Filename> [Options]" + Environment.NewLine);
             var argLists = new Dictionary<Names, string>();
             var maxLength = 0;
             foreach (Names name in Enum.GetValues(typeof(Names)))
