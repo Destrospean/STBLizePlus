@@ -145,7 +145,8 @@ namespace Destrospean.STBLizePlus
                         {
                             var result = process.StandardOutput.ReadToEnd();
                             process.WaitForExit();
-                            entryCommand = result.Substring(result.IndexOf(Process.GetCurrentProcess().Id.ToString()) + Process.GetCurrentProcess().Id.ToString().Length + 1).TrimEnd();
+                            entryCommand = result.Substring(result.IndexOf(Process.GetCurrentProcess().Id.ToString()) + Process.GetCurrentProcess().Id.ToString().Length + 1);
+                            entryCommand = entryCommand.EndsWith("\n") ? entryCommand.Remove(entryCommand.Length - 1) : entryCommand;
                         }
                     }
                     break;
