@@ -16,25 +16,22 @@ namespace Destrospean.STBLizePlus
             }
             var options = new Options();
             var positionalArgs = new System.Collections.Generic.List<string>();
-            if (args.Length > 0)
+            for (var i = 0; i < args.Length; i++)
             {
-                for (var i = 0; i < args.Length; i++)
+                var skip = false;
+                if (i > 0 && args[i - 1].StartsWith("-"))
                 {
-                    var skip = false;
-                    if (i > 0 && args[i - 1].StartsWith("-"))
-                    {
-                        options.CheckForValue(Options.Names.OutputDirectory, args[i - 1], args[i], ref skip);
-                        options.CheckForValue(Options.Names.OutputFilename, args[i - 1], args[i], ref skip);
-                        options.CheckForValue(Options.Names.UnhashedFilename, args[i - 1], args[i], ref skip);
-                    }
-                    options.Check(Options.Names.NoUnhashed, args[i], ref skip);
-                    options.Check(Options.Names.UnhashedOnly, args[i], ref skip);
-                    options.Check(Options.Names.XmlOnly, args[i], ref skip);
-                    options.Check(Options.Names.YamlOnly, args[i], ref skip);
-                    if (!skip && !args[i].StartsWith("-"))
-                    {
-                        positionalArgs.Add(args[i]);
-                    }
+                    options.CheckForValue(Options.Names.OutputDirectory, args[i - 1], args[i], ref skip);
+                    options.CheckForValue(Options.Names.OutputFilename, args[i - 1], args[i], ref skip);
+                    options.CheckForValue(Options.Names.UnhashedFilename, args[i - 1], args[i], ref skip);
+                }
+                options.Check(Options.Names.NoUnhashed, args[i], ref skip);
+                options.Check(Options.Names.UnhashedOnly, args[i], ref skip);
+                options.Check(Options.Names.XmlOnly, args[i], ref skip);
+                options.Check(Options.Names.YamlOnly, args[i], ref skip);
+                if (!skip && !args[i].StartsWith("-"))
+                {
+                    positionalArgs.Add(args[i]);
                 }
             }
             if (positionalArgs.Count == 0)
