@@ -48,15 +48,28 @@ namespace Destrospean.STBLizePlus
                     {
                         if (reader.ReadUInt32() == 0x4C425453)
                         {
+                            var outputFileTypes = new System.Collections.Generic.List<string>
+                                {
+                                    "XML",
+                                    "YAML"
+                                };
+                            if (options.XmlOnly)
+                            {
+                                outputFileTypes.RemoveAll(x => x != "XML");
+                            }
+                            else if (options.YamlOnly)
+                            {
+                                outputFileTypes.RemoveAll(x => x != "YAML");
+                            }
                             Utils.WritePlaintext(path, options.UnhashedFilename, options.OutputDirectory, options.OutputFilename, (directory, filename, newEntries) => 
                                 {
                                     if (!options.XmlOnly && !options.YamlOnly)
                                     {
                                         filename = Path.GetFileNameWithoutExtension(filename);
                                     }
-                                    if (!options.YamlOnly)
+                                    if (outputFileTypes.Contains("XML"))
                                     {
-                                        using (var output = new FileStream(directory + Path.DirectorySeparatorChar + filename + (options.XmlOnly ? "" : ".xml"), FileMode.Create, FileAccess.Write))
+                                        using (var output = new FileStream(directory + Path.DirectorySeparatorChar + filename + ((options.OutputFilename == null || outputFileTypes.Count > 1) && !filename.ToLowerInvariant().EndsWith(".xml") ? ".xml" : ""), FileMode.Create, FileAccess.Write))
                                         {
                                             using (var writer = new StreamWriter(output, System.Text.Encoding.UTF8))
                                             {
@@ -64,9 +77,9 @@ namespace Destrospean.STBLizePlus
                                             }
                                         }
                                     }
-                                    if (!options.XmlOnly)
+                                    if (outputFileTypes.Contains("YAML"))
                                     {
-                                        using (var output = new FileStream(directory + Path.DirectorySeparatorChar + filename + (options.YamlOnly ? "" : ".yaml"), FileMode.Create, FileAccess.Write))
+                                        using (var output = new FileStream(directory + Path.DirectorySeparatorChar + filename + ((options.OutputFilename == null || outputFileTypes.Count > 1) && !filename.ToLowerInvariant().EndsWith(".yaml") ? ".yaml" : ""), FileMode.Create, FileAccess.Write))
                                         {
                                             using (var writer = new StreamWriter(output, System.Text.Encoding.UTF8))
                                             {
@@ -74,13 +87,13 @@ namespace Destrospean.STBLizePlus
                                             }
                                         }
                                     }
-                                });
+                                }, outputFileTypes.ToArray());
                             return;
                         }
                     }
                 }
                 var entries = ReadInputFile(path);
-                var outputPath = Utils.GetOutputPath(path, options.OutputDirectory);
+                var outputPath = Utils.GetStblOutputPath(path, options.OutputDirectory);
                 if (options.OutputFilename == null)
                 {
                     options.OutputFilename = Path.GetFileName(outputPath);

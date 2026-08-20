@@ -56,15 +56,21 @@ namespace Destrospean.STBLizePlus
             return hash;
         }
 
-        public static string GetOutputPath(string inputPath, string outputDirectory)
+        public static string GetOutputDirectory(string inputPath, string baseOutputDirectory, params string[] outputFileTypes)
         {
             var pathWithoutExtension = Path.GetFullPath(inputPath.Contains(".") ? inputPath.Substring(0, inputPath.LastIndexOf(".")) : inputPath);
-            var outputPath = outputDirectory ?? (File.Exists(Path.GetDirectoryName(pathWithoutExtension) + Path.DirectorySeparatorChar + STBLizePlusDirectoryFilename) ? Path.GetDirectoryName(Path.GetDirectoryName(pathWithoutExtension)) : Path.GetDirectoryName(pathWithoutExtension)) + Path.DirectorySeparatorChar + Path.GetFileName(pathWithoutExtension) + "_STBL_" + CurrentTime;
-            if (!Directory.Exists(outputPath))
+            return (baseOutputDirectory ?? (File.Exists(Path.GetDirectoryName(pathWithoutExtension) + Path.DirectorySeparatorChar + STBLizePlusDirectoryFilename) ? Path.GetDirectoryName(Path.GetDirectoryName(pathWithoutExtension)) : Path.GetDirectoryName(pathWithoutExtension)) + Path.DirectorySeparatorChar + Path.GetFileName(pathWithoutExtension) + "_" + string.Join("+", outputFileTypes) + "_" + CurrentTime);
+        }
+
+        public static string GetStblOutputPath(string inputPath, string baseOutputDirectory)
+        {
+            var pathWithoutExtension = Path.GetFullPath(inputPath.Contains(".") ? inputPath.Substring(0, inputPath.LastIndexOf(".")) : inputPath);
+            var outputDirectory = GetOutputDirectory(inputPath, baseOutputDirectory, "STBL");
+            if (!Directory.Exists(outputDirectory))
             {
-                CreateSTBLizePlusDirectoryFile(outputPath);
+                CreateSTBLizePlusDirectoryFile(outputDirectory);
             }
-            return outputPath + Path.DirectorySeparatorChar + Path.GetFileName(pathWithoutExtension) + ".stbl";
+            return outputDirectory + Path.DirectorySeparatorChar + Path.GetFileName(pathWithoutExtension) + ".stbl";
         }
 
         public static IDictionary ReadStbl(string path)
@@ -106,7 +112,7 @@ namespace Destrospean.STBLizePlus
             }
         }
 
-        public static void WritePlaintext(string inputPath, string unhashedFilename, string outputDirectory, string outputFilename, Action<string, string, IDictionary> writeFileCallback)
+        public static void WritePlaintext(string inputPath, string unhashedFilename, string baseOutputDirectory, string outputFilename, Action<string, string, IDictionary> writeFilesCallback, params string[] outputFileTypes)
         {
             string[] suffixes = new[]
                 {
@@ -153,13 +159,13 @@ namespace Destrospean.STBLizePlus
                     newEntries[entry.Key] = entry.Value;
                 }
             }
-            var outputPath = outputDirectory ?? (File.Exists(Path.GetDirectoryName(pathWithoutExtension) + Path.DirectorySeparatorChar + STBLizePlusDirectoryFilename) ? Path.GetDirectoryName(Path.GetDirectoryName(pathWithoutExtension)) : Path.GetDirectoryName(pathWithoutExtension)) + Path.DirectorySeparatorChar + Path.GetFileName(pathWithoutExtension) + "_XML+YAML_" + CurrentTime;
-            if (!Directory.Exists(outputPath))
+            var outputDirectory = GetOutputDirectory(inputPath, baseOutputDirectory, outputFileTypes);
+            if (!Directory.Exists(outputDirectory))
             {
-                CreateSTBLizePlusDirectoryFile(outputPath);
+                CreateSTBLizePlusDirectoryFile(outputDirectory);
             }
-            writeFileCallback(outputPath, outputFilename ?? Path.GetFileName(pathWithoutExtension), newEntries);
-            Console.WriteLine(Path.GetFullPath(outputPath));
+            writeFilesCallback(outputDirectory, outputFilename ?? Path.GetFileName(pathWithoutExtension), newEntries);
+            Console.WriteLine(Path.GetFullPath(outputDirectory));
         }
 
         public static void WriteStbl(string path, IDictionary entries, bool keysAsValues = false)

@@ -31,7 +31,7 @@ namespace Destrospean.STBLizePlus
                 Names.OutputFilename,
                 new[]
                 {
-                    "Specify the filename(s) for the output STBL or XML and/or YAML",
+                    "Specify the filename for the output STBL or XML and/or YAML (for multiple plaintext files, specify it without the extension)",
                     "-o",
                     "--out",
                     "--output-filename"
