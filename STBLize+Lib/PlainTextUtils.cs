@@ -67,7 +67,7 @@ namespace Destrospean.STBLizePlus
             }
         }
 
-        public static void WriteFile(IDictionary entries, string directory, string filename, string fileType, string[] fileTypes, Action<IDictionary, StreamWriter> writeFileCallback, bool outputFileNameUndefined = true)
+        public static void WriteFile(IDictionary entries, string directory, string filename, string fileType, Action<IDictionary, StreamWriter> writeFileCallback, bool outputFileNameUndefined = true, params string[] fileTypes)
         {
             if (fileTypes.Length > 1)
             {

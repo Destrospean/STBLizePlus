@@ -61,8 +61,8 @@ namespace Destrospean.STBLizePlus
                             var outputDirectory = FileSystemUtils.GetOutputDirectory(path, options.OutputDirectory, outputFileTypes.ToArray());
                             PlainTextUtils.WriteFiles(path, options.UnhashedFilename, outputDirectory, options.OutputFilename, (directory, filename, newEntries) => 
                                 {
-                                    PlainTextUtils.WriteFile(newEntries, directory, filename, "XML", outputFileTypes.ToArray(), PlainTextUtils.WriteXml, options.OutputFilename == null);
-                                    PlainTextUtils.WriteFile(newEntries, directory, filename, "YAML", outputFileTypes.ToArray(), PlainTextUtils.WriteYaml, options.OutputFilename == null);
+                                    PlainTextUtils.WriteFile(newEntries, directory, filename, "XML", PlainTextUtils.WriteXml, options.OutputFilename == null, outputFileTypes.ToArray());
+                                    PlainTextUtils.WriteFile(newEntries, directory, filename, "YAML", PlainTextUtils.WriteYaml, options.OutputFilename == null, outputFileTypes.ToArray());
                                 }, outputFileTypes.ToArray());
                             Console.WriteLine(outputDirectory);
                             return;
