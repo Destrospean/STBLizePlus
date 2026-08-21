@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Collections.Specialized;
 using System.IO;
 
 namespace Destrospean.STBLizePlus
@@ -15,64 +16,14 @@ namespace Destrospean.STBLizePlus
             writer.Write(value.ToCharArray());
         }
 
-        public static IDictionary GetEntriesWithUnhashedKeys(string stblPath, string unhashedStblPath)
+        public static IDictionary DecrapifyKeys(this IDictionary entries)
         {
-            using (var stblStream = File.OpenRead(stblPath))
+            var decrapifiedKeyEntries = new OrderedDictionary();
+            foreach (DictionaryEntry entry in entries)
             {
-                using (var unhashedStblStream = File.OpenRead(unhashedStblPath))
-                {
-                    return GetEntriesWithUnhashedKeys(stblStream, unhashedStblStream);
-                }
+                decrapifiedKeyEntries[entry.Key.ToString().RemoveArbitraryMaleSuffix().Replace(ArbitrarySeparator, "")] = (entry.Value as IDictionary)?.DecrapifyKeys() ?? entry.Value;
             }
-        }
-
-        public static IDictionary GetEntriesWithUnhashedKeys(Stream stblStream, Stream unhashedStblStream)
-        {
-            string[] suffixes = new[]
-                {
-                    "_Female",
-                    "_FemaleFemale",
-                    "_MaleFemale"
-                };
-            IDictionary entriesWithHashedKeys = ReadStbl(stblStream),
-            entriesWithUnhashedKeys = new System.Collections.Specialized.OrderedDictionary(),
-            intermediateEntries = new System.Collections.Specialized.OrderedDictionary();
-            var keysToReplace = new System.Collections.Generic.List<string>();
-            foreach (DictionaryEntry entry in ReadStbl(unhashedStblStream))
-            {
-                var value = entry.Value.ToString().Replace("/", ArbitrarySeparator + "/").Replace(":", ArbitrarySeparator + ":");
-                foreach (var suffix in suffixes)
-                {
-                    if (value.ToLowerInvariant().EndsWith(suffix.ToLowerInvariant()))
-                    {
-                        keysToReplace.Add(value.Substring(0, value.ToLowerInvariant().LastIndexOf(suffix.ToLowerInvariant())));
-                    }
-                }
-                intermediateEntries[value] = entriesWithHashedKeys[entry.Key];
-            }
-            foreach (DictionaryEntry entry in intermediateEntries)
-            {
-                if (keysToReplace.Contains(entry.Key.ToString()))
-                {
-                    entriesWithUnhashedKeys[entry.Key + ArbitrarySeparator + ArbitraryMaleSuffix] = entry.Value;
-                    continue;
-                }
-                var hasNoSuffix = true;
-                foreach (var suffix in suffixes)
-                {
-                    if (entry.Key.ToString().ToLowerInvariant().EndsWith(suffix.ToLowerInvariant()))
-                    {
-                        entriesWithUnhashedKeys[entry.Key.ToString().Substring(0, entry.Key.ToString().ToLowerInvariant().LastIndexOf(suffix.ToLowerInvariant())) + ArbitrarySeparator + suffix] = entry.Value;
-                        hasNoSuffix = false;
-                        break;
-                    }
-                }
-                if (hasNoSuffix)
-                {
-                    entriesWithUnhashedKeys[entry.Key] = entry.Value;
-                }
-            }
-            return entriesWithUnhashedKeys;
+            return decrapifiedKeyEntries;
         }
 
         public static ulong GetFnv64(string value)
@@ -99,7 +50,7 @@ namespace Destrospean.STBLizePlus
         {
             try
             {
-                var entries = new System.Collections.Specialized.OrderedDictionary();
+                var entries = new OrderedDictionary();
                 using (var reader = new BinaryReader(stream, System.Text.Encoding.Unicode))
                 {
                     reader.ReadBytes(7);
@@ -155,6 +106,71 @@ namespace Destrospean.STBLizePlus
                     WriteEntryPair(writer, entry.Key.ToString(), keysAsValues ? entry.Key.ToString() : entry.Value.ToString());
                 }
             }
+        }
+
+        public static IDictionary Unflatten(this IDictionary entries)
+        {
+            return entries.Unflatten(ArbitrarySeparator).DecrapifyKeys();
+        }
+
+        public static IDictionary UnhashKeys(string stblPath, string unhashedStblPath, bool readyToUnflatten = false)
+        {
+            using (var stblStream = File.OpenRead(stblPath))
+            {
+                using (var unhashedStblStream = File.OpenRead(unhashedStblPath))
+                {
+                    return UnhashKeys(stblStream, unhashedStblStream, readyToUnflatten);
+                }
+            }
+        }
+
+        public static IDictionary UnhashKeys(Stream stblStream, Stream unhashedStblStream, bool readyToUnflatten = false)
+        {
+            var suffixes = readyToUnflatten ? new[]
+                {
+                    "_Female",
+                    "_FemaleFemale",
+                    "_MaleFemale"
+                } : new string[0];
+            IDictionary entriesWithHashedKeys = ReadStbl(stblStream),
+            entriesWithUnhashedKeys = new OrderedDictionary(),
+            intermediateEntries = new OrderedDictionary();
+            var keysToReplace = new System.Collections.Generic.List<string>();
+            foreach (DictionaryEntry entry in ReadStbl(unhashedStblStream))
+            {
+                var value = readyToUnflatten ? entry.Value.ToString().Replace("/", ArbitrarySeparator + "/").Replace(":", ArbitrarySeparator + ":") : entry.Value.ToString();
+                foreach (var suffix in suffixes)
+                {
+                    if (value.ToLowerInvariant().EndsWith(suffix.ToLowerInvariant()))
+                    {
+                        keysToReplace.Add(value.Substring(0, value.ToLowerInvariant().LastIndexOf(suffix.ToLowerInvariant())));
+                    }
+                }
+                intermediateEntries[value] = entriesWithHashedKeys[entry.Key];
+            }
+            foreach (DictionaryEntry entry in intermediateEntries)
+            {
+                if (keysToReplace.Contains(entry.Key.ToString()))
+                {
+                    entriesWithUnhashedKeys[entry.Key + ArbitrarySeparator + ArbitraryMaleSuffix] = entry.Value;
+                    continue;
+                }
+                var hasNoSuffix = true;
+                foreach (var suffix in suffixes)
+                {
+                    if (entry.Key.ToString().ToLowerInvariant().EndsWith(suffix.ToLowerInvariant()))
+                    {
+                        entriesWithUnhashedKeys[entry.Key.ToString().Substring(0, entry.Key.ToString().ToLowerInvariant().LastIndexOf(suffix.ToLowerInvariant())) + ArbitrarySeparator + suffix] = entry.Value;
+                        hasNoSuffix = false;
+                        break;
+                    }
+                }
+                if (hasNoSuffix)
+                {
+                    entriesWithUnhashedKeys[entry.Key] = entry.Value;
+                }
+            }
+            return entriesWithUnhashedKeys;
         }
     }
 }

@@ -69,6 +69,11 @@ namespace Destrospean.STBLizePlus
 
         public static void WriteFile(IDictionary entries, string directory, string filename, string fileType, Action<IDictionary, StreamWriter> writeFileCallback, bool outputFileNameUndefined = true, params string[] fileTypes)
         {
+            WriteFile(entries, directory, filename, fileType, writeFileCallback, outputFileNameUndefined, false, fileTypes);
+        }
+
+        public static void WriteFile(IDictionary entries, string directory, string filename, string fileType, Action<IDictionary, StreamWriter> writeFileCallback, bool outputFileNameUndefined = true, bool unflatten = false, params string[] fileTypes)
+        {
             if (fileTypes.Length > 1)
             {
                 filename = Path.GetFileNameWithoutExtension(filename);
@@ -81,7 +86,7 @@ namespace Destrospean.STBLizePlus
             {
                 using (var writer = new StreamWriter(stream))
                 {
-                    writeFileCallback(entries, writer);
+                    writeFileCallback(unflatten ? entries.Unflatten() : entries.DecrapifyKeys(), writer);
                 }
             }
         }
@@ -93,7 +98,7 @@ namespace Destrospean.STBLizePlus
             {
                 FileSystemUtils.CreateSTBLizePlusDirectoryFile(outputDirectory);
             }
-            writeFilesCallback(outputDirectory, outputFilename ?? Path.GetFileName(pathWithoutExtension), STBLUtils.GetEntriesWithUnhashedKeys(inputPath, Path.GetDirectoryName(pathWithoutExtension) + Path.DirectorySeparatorChar + unhashedFilename));
+            writeFilesCallback(outputDirectory, outputFilename ?? Path.GetFileName(pathWithoutExtension), STBLUtils.UnhashKeys(inputPath, Path.GetDirectoryName(pathWithoutExtension) + Path.DirectorySeparatorChar + unhashedFilename, true));
         }
 
         public static void WriteXml(IDictionary entries, StreamWriter writer)
@@ -101,7 +106,7 @@ namespace Destrospean.STBLizePlus
             writer.WriteLine("<?xml version=\"1.0\" ?>" + Environment.NewLine + "<TEXT>" + Environment.NewLine);
             foreach (DictionaryEntry entry in entries)
             {
-                writer.WriteLine("<KEY>" + entry.Key.ToString().RemoveArbitraryMaleSuffix().Replace(STBLUtils.ArbitrarySeparator, "") + "</KEY>" + Environment.NewLine + "<STR>" + entry.Value + "</STR>" + Environment.NewLine);
+                writer.WriteLine("<KEY>" + entry.Key + "</KEY>" + Environment.NewLine + "<STR>" + entry.Value + "</STR>" + Environment.NewLine);
             }
             writer.WriteLine("</TEXT>");
         }
@@ -113,7 +118,6 @@ namespace Destrospean.STBLizePlus
 
         public static void WriteYaml(IDictionary entries, StreamWriter writer, int level, int indent)
         {
-            entries = entries.Unflatten(STBLUtils.ArbitrarySeparator);
             var indentation = "";
             for (var i = 0; i < indent * level; i++)
             {
@@ -124,7 +128,7 @@ namespace Destrospean.STBLizePlus
                 var dictionary = entry.Value as IDictionary;
                 if (dictionary == null)
                 {
-                    writer.WriteLine(indentation + "\"" + entry.Key.ToString().RemoveArbitraryMaleSuffix() + "\": \"" + entry.Value + "\"");
+                    writer.WriteLine(indentation + "\"" + entry.Key + "\": \"" + entry.Value + "\"");
                     continue;
                 }
                 writer.WriteLine(indentation + "\"" + entry.Key + "\":");
