@@ -6,8 +6,8 @@ namespace Destrospean.STBLizePlus
 {
     public static class STBLUtils
     {
-        public static readonly string ArbitraryMaleSuffix = "{DESTROSPEAN_STBL_MALE_SUFFIX_" + System.Guid.NewGuid() + "}",
-        ArbitrarySeparator = "{DESTROSPEAN_STBL_SEPARATOR_" + System.Guid.NewGuid() + "}";
+        static readonly string sArbitraryMaleSuffix = "{DESTROSPEAN_STBL_MALE_SUFFIX_" + System.Guid.NewGuid() + "}",
+        sArbitrarySeparator = "{DESTROSPEAN_STBL_SEPARATOR_" + System.Guid.NewGuid() + "}";
 
         static void WriteEntryPair(BinaryWriter writer, string key, string value)
         {
@@ -20,8 +20,8 @@ namespace Destrospean.STBLizePlus
         {
             var decrapifiedKeyEntries = new OrderedDictionary();
             foreach (DictionaryEntry entry in entries)
-            {
-                decrapifiedKeyEntries[entry.Key.ToString().RemoveArbitraryMaleSuffix().Replace(ArbitrarySeparator, "")] = (entry.Value as IDictionary)?.DecrapifyKeys() ?? entry.Value;
+            {   
+                decrapifiedKeyEntries[(entry.Key.ToString().EndsWith(sArbitraryMaleSuffix) ? entry.Key.ToString().Substring(0, entry.Key.ToString().LastIndexOf(sArbitraryMaleSuffix)) : entry.Key.ToString()).Replace(sArbitrarySeparator, "")] = (entry.Value as IDictionary)?.DecrapifyKeys() ?? entry.Value;
             }
             return decrapifiedKeyEntries;
         }
@@ -70,11 +70,6 @@ namespace Destrospean.STBLizePlus
             }
         }
 
-        public static string RemoveArbitraryMaleSuffix(this string key)
-        {
-            return key.EndsWith(ArbitraryMaleSuffix) ? key.Substring(0, key.LastIndexOf(ArbitraryMaleSuffix)) : key;
-        }
-
         public static void WriteStbl(string path, IDictionary entries, bool keysAsValues = false)
         {
             using (var stream = File.Create(path))
@@ -110,7 +105,7 @@ namespace Destrospean.STBLizePlus
 
         public static IDictionary Unflatten(this IDictionary entries)
         {
-            return entries.Unflatten(ArbitrarySeparator).DecrapifyKeys();
+            return entries.Unflatten(sArbitrarySeparator).DecrapifyKeys();
         }
 
         public static IDictionary UnhashKeys(string stblPath, string unhashedStblPath, bool readyToUnflatten = false)
@@ -138,7 +133,7 @@ namespace Destrospean.STBLizePlus
             var keysToReplace = new System.Collections.Generic.List<string>();
             foreach (DictionaryEntry entry in ReadStbl(unhashedStblStream))
             {
-                var value = readyToUnflatten ? entry.Value.ToString().Replace("/", ArbitrarySeparator + "/").Replace(":", ArbitrarySeparator + ":") : entry.Value.ToString();
+                var value = readyToUnflatten ? entry.Value.ToString().Replace("/", sArbitrarySeparator + "/").Replace(":", sArbitrarySeparator + ":") : entry.Value.ToString();
                 foreach (var suffix in suffixes)
                 {
                     if (value.ToLowerInvariant().EndsWith(suffix.ToLowerInvariant()))
@@ -152,7 +147,7 @@ namespace Destrospean.STBLizePlus
             {
                 if (keysToReplace.Contains(entry.Key.ToString()))
                 {
-                    entriesWithUnhashedKeys[entry.Key + ArbitrarySeparator + ArbitraryMaleSuffix] = entry.Value;
+                    entriesWithUnhashedKeys[entry.Key + sArbitrarySeparator + sArbitraryMaleSuffix] = entry.Value;
                     continue;
                 }
                 var hasNoSuffix = true;
@@ -160,7 +155,7 @@ namespace Destrospean.STBLizePlus
                 {
                     if (entry.Key.ToString().ToLowerInvariant().EndsWith(suffix.ToLowerInvariant()))
                     {
-                        entriesWithUnhashedKeys[entry.Key.ToString().Substring(0, entry.Key.ToString().ToLowerInvariant().LastIndexOf(suffix.ToLowerInvariant())) + ArbitrarySeparator + suffix] = entry.Value;
+                        entriesWithUnhashedKeys[entry.Key.ToString().Substring(0, entry.Key.ToString().ToLowerInvariant().LastIndexOf(suffix.ToLowerInvariant())) + sArbitrarySeparator + suffix] = entry.Value;
                         hasNoSuffix = false;
                         break;
                     }
