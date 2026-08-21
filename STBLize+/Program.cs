@@ -93,7 +93,7 @@ namespace Destrospean.STBLizePlus
             catch (Exception ex)
             {
                 WriteErrorLog(path, ex);
-                throw;
+                Console.Error.WriteLine(ex.Message);
             }
         }
 
