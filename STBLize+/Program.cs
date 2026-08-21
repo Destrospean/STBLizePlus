@@ -99,7 +99,7 @@ namespace Destrospean.STBLizePlus
 
         public static void WriteErrorLog(string path, Exception ex)
         {
-            using (var output = File.Create(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(path)), string.IsNullOrEmpty(path) ? "stbl.log" : Path.GetFileNameWithoutExtension(path) + ".log")))
+            using (var output = File.Create(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(path)), string.IsNullOrEmpty(path) ? "STBLize+.log" : Path.GetFileNameWithoutExtension(path) + ".log")))
             {
                 using (var writer = new StreamWriter(output))
                 {
