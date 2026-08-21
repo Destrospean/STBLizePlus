@@ -101,7 +101,7 @@ namespace Destrospean.STBLizePlus
         {
             using (var output = File.Create(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(path)), string.IsNullOrEmpty(path) ? "stbl.log" : Path.GetFileNameWithoutExtension(path) + ".log")))
             {
-                using (var writer = new StreamWriter(output, System.Text.Encoding.UTF8))
+                using (var writer = new StreamWriter(output))
                 {
                     writer.WriteLine(ex.GetType().Name + " - " + ex.Message);
                     writer.WriteLine(ex.StackTrace);
