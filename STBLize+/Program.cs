@@ -39,9 +39,9 @@ namespace Destrospean.STBLizePlus
             var path = positionalArgs[0];
             try
             {
-                using (var input = new FileStream(path, FileMode.Open, FileAccess.Read))
+                using (var stream = File.OpenRead(path))
                 {
-                    using (var reader = new BinaryReader(input, System.Text.Encoding.Unicode))
+                    using (var reader = new BinaryReader(stream, System.Text.Encoding.Unicode))
                     {
                         if (reader.ReadUInt32() == 0x4C425453)
                         {
@@ -59,12 +59,12 @@ namespace Destrospean.STBLizePlus
                                 outputFileTypes.RemoveAll(x => x != "YAML");
                             }
                             var outputDirectory = FileSystemUtils.GetOutputDirectory(path, options.OutputDirectory, outputFileTypes.ToArray());
-                            PlainTextUtils.Write(path, options.UnhashedFilename, outputDirectory, options.OutputFilename, (directory, filename, newEntries) => 
+                            PlainTextUtils.WriteFiles(path, options.UnhashedFilename, outputDirectory, options.OutputFilename, (directory, filename, newEntries) => 
                                 {
-                                    PlainTextUtils.Write(newEntries, directory, filename, "XML", outputFileTypes.ToArray(), PlainTextUtils.WriteXml, options.OutputFilename == null);
-                                    PlainTextUtils.Write(newEntries, directory, filename, "YAML", outputFileTypes.ToArray(), PlainTextUtils.WriteYaml, options.OutputFilename == null);
+                                    PlainTextUtils.WriteFile(newEntries, directory, filename, "XML", outputFileTypes.ToArray(), PlainTextUtils.WriteXml, options.OutputFilename == null);
+                                    PlainTextUtils.WriteFile(newEntries, directory, filename, "YAML", outputFileTypes.ToArray(), PlainTextUtils.WriteYaml, options.OutputFilename == null);
                                 }, outputFileTypes.ToArray());
-                            Console.WriteLine(Path.GetFullPath(outputDirectory));
+                            Console.WriteLine(outputDirectory);
                             return;
                         }
                     }
@@ -74,20 +74,21 @@ namespace Destrospean.STBLizePlus
                 {
                     throw new ArgumentException("File must be a valid JSON, XML, or YAML", path);
                 }
-                var outputPath = FileSystemUtils.GetStblOutputPath(path, options.OutputDirectory);
-                if (options.OutputFilename == null)
+                var outputFolder = FileSystemUtils.GetOutputDirectory(path, options.OutputDirectory, "STBL");
+                if (!Directory.Exists(outputFolder))
                 {
-                    options.OutputFilename = Path.GetFileName(outputPath);
+                    FileSystemUtils.CreateSTBLizePlusDirectoryFile(outputFolder);
                 }
+                options.OutputFilename = options.OutputFilename ?? Path.GetFileNameWithoutExtension(path) + ".stbl";
                 if (!options.UnhashedOnly)
                 {
-                    STBLUtils.WriteStbl(Path.GetDirectoryName(outputPath) + Path.DirectorySeparatorChar + options.OutputFilename, entries);
+                    STBLUtils.WriteStbl(outputFolder + Path.DirectorySeparatorChar + options.OutputFilename, entries);
                 }
                 if (!options.NoUnhashed)
                 {
-                    STBLUtils.WriteStbl(Path.GetDirectoryName(outputPath) + Path.DirectorySeparatorChar + options.UnhashedFilename, entries, true);
+                    STBLUtils.WriteStbl(outputFolder + Path.DirectorySeparatorChar + options.UnhashedFilename, entries, true);
                 }
-                Console.WriteLine(Path.GetFullPath(Path.GetDirectoryName(outputPath)));
+                Console.WriteLine(outputFolder);
             }
             catch (Exception ex)
             {
@@ -98,7 +99,7 @@ namespace Destrospean.STBLizePlus
 
         public static void WriteErrorLog(string path, Exception ex)
         {
-            using (var output = new FileStream(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(path)), string.IsNullOrEmpty(path) ? "stbl.log" : Path.GetFileNameWithoutExtension(path) + ".log"), FileMode.Create, FileAccess.Write))
+            using (var output = File.Create(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(path)), string.IsNullOrEmpty(path) ? "stbl.log" : Path.GetFileNameWithoutExtension(path) + ".log")))
             {
                 using (var writer = new StreamWriter(output, System.Text.Encoding.UTF8))
                 {

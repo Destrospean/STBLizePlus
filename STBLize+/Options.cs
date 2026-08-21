@@ -127,29 +127,27 @@ namespace Destrospean.STBLizePlus
         public static void PrintAll()
         {
             string entryCommand = null;
-            switch ((int)Environment.OSVersion.Platform)
+            if (FileSystemUtils.OperatingSystem == FileSystemUtils.OS.Unix)
             {
-                case 4:
-                case 128:
-                    using (var process = Process.Start(new ProcessStartInfo
-                        {
-                            FileName = "pgrep",
-                            Arguments = "-a -p " + Process.GetCurrentProcess().Id,
-                            RedirectStandardOutput = true,
-                            RedirectStandardError = true,
-                            UseShellExecute = false,
-                            CreateNoWindow = true
-                        }))
+                var processId = Process.GetCurrentProcess().Id.ToString();
+                using (var process = Process.Start(new ProcessStartInfo
                     {
-                        if (process != null)
-                        {
-                            var result = process.StandardOutput.ReadToEnd();
-                            process.WaitForExit();
-                            entryCommand = result.Substring(result.IndexOf(Process.GetCurrentProcess().Id.ToString()) + Process.GetCurrentProcess().Id.ToString().Length + 1);
-                            entryCommand = entryCommand.EndsWith("\n") ? entryCommand.Remove(entryCommand.Length - 1) : entryCommand;
-                        }
+                        FileName = "pgrep",
+                        Arguments = "-a -p " + processId,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }))
+                {
+                    if (process != null)
+                    {
+                        var output = process.StandardOutput.ReadToEnd();
+                        process.WaitForExit();
+                        entryCommand = output.Substring(output.IndexOf(processId) + processId.Length + 1);
+                        entryCommand = entryCommand.EndsWith("\n") ? entryCommand.Remove(entryCommand.Length - 1) : entryCommand;
                     }
-                    break;
+                }
             }
             Console.WriteLine("Usage: " + (entryCommand ?? System.IO.Path.GetFileNameWithoutExtension(AppDomain.CurrentDomain.FriendlyName)) + " <Input Filename> [Options]" + Environment.NewLine);
             var argLists = new Dictionary<Names, string>();
