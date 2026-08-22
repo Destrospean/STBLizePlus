@@ -86,7 +86,7 @@ namespace Destrospean.STBLizePlus
             {
                 using (var writer = new StreamWriter(stream))
                 {
-                    writeFileCallback(unflatten ? entries.Unflatten() : entries.DecrapifyKeys(), writer);
+                    writeFileCallback(unflatten ? entries.Unflatten() : entries, writer);
                 }
             }
         }
@@ -98,7 +98,7 @@ namespace Destrospean.STBLizePlus
             {
                 FileSystemUtils.CreateSTBLizePlusDirectoryFile(outputDirectory);
             }
-            writeFilesCallback(outputDirectory, outputFilename ?? Path.GetFileName(pathWithoutExtension), STBLUtils.UnhashKeys(inputPath, Path.GetDirectoryName(pathWithoutExtension) + Path.DirectorySeparatorChar + unhashedFilename, true));
+            writeFilesCallback(outputDirectory, outputFilename ?? Path.GetFileName(pathWithoutExtension), STBLUtils.UnhashKeys(inputPath, Path.GetDirectoryName(pathWithoutExtension) + Path.DirectorySeparatorChar + unhashedFilename));
         }
 
         public static void WriteXml(IDictionary entries, StreamWriter writer)

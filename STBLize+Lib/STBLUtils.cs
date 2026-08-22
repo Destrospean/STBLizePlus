@@ -6,17 +6,14 @@ namespace Destrospean.STBLizePlus
 {
     public static class STBLUtils
     {
-        static readonly string sArbitraryMaleSuffix = "{DESTROSPEAN_STBL_MALE_SUFFIX_" + System.Guid.NewGuid() + "}",
-        sArbitrarySeparator = "{DESTROSPEAN_STBL_SEPARATOR_" + System.Guid.NewGuid() + "}";
-
         public const int FourCC = 0x4C425453;
 
-        public static IDictionary DecrapifyKeys(this IDictionary entries)
+        static IDictionary DecrapifyKeys(this IDictionary entries, string arbitraryMaleSuffix)
         {
             var decrapifiedKeyEntries = new OrderedDictionary();
             foreach (DictionaryEntry entry in entries)
             {   
-                decrapifiedKeyEntries[(entry.Key.ToString().EndsWith(sArbitraryMaleSuffix) ? entry.Key.ToString().Substring(0, entry.Key.ToString().LastIndexOf(sArbitraryMaleSuffix)) : entry.Key.ToString()).Replace(sArbitrarySeparator, "")] = (entry.Value as IDictionary)?.DecrapifyKeys() ?? entry.Value;
+                decrapifiedKeyEntries[(entry.Key.ToString().EndsWith(arbitraryMaleSuffix) ? entry.Key.ToString().Substring(0, entry.Key.ToString().LastIndexOf(arbitraryMaleSuffix)) : entry.Key.ToString())] = (entry.Value as IDictionary)?.DecrapifyKeys(arbitraryMaleSuffix) ?? entry.Value;
             }
             return decrapifiedKeyEntries;
         }
@@ -65,6 +62,79 @@ namespace Destrospean.STBLizePlus
             }
         }
 
+        public static IDictionary Unflatten(this IDictionary entries)
+        {
+            string arbitraryMaleSuffix = "{DESTROSPEAN_STBL_MALE_SUFFIX_" + System.Guid.NewGuid() + "}",
+            arbitrarySeparator = "{DESTROSPEAN_STBL_SEPARATOR_" + System.Guid.NewGuid() + "}";
+            var suffixes = new[]
+                {
+                    "_Female",
+                    "_FemaleFemale",
+                    "_MaleFemale"
+                };
+            IDictionary intermediateEntries = new OrderedDictionary(),
+            readyToUnflattenEntries = new OrderedDictionary();
+            var keysToReplace = new System.Collections.Generic.List<string>();
+            foreach (DictionaryEntry entry in entries)
+            {
+                var key = entry.Key.ToString().Replace("/", arbitrarySeparator + "/").Replace(":", arbitrarySeparator + ":");
+                foreach (var suffix in suffixes)
+                {
+                    if (key.ToLowerInvariant().EndsWith(suffix.ToLowerInvariant()))
+                    {
+                        keysToReplace.Add(key.Substring(0, key.ToLowerInvariant().LastIndexOf(suffix.ToLowerInvariant())));
+                        break;
+                    }
+                }
+                intermediateEntries[key] = entry.Value;
+            }
+            foreach (DictionaryEntry entry in intermediateEntries)
+            {
+                if (keysToReplace.Contains(entry.Key.ToString()))
+                {
+                    readyToUnflattenEntries[entry.Key + arbitrarySeparator + arbitraryMaleSuffix] = entry.Value;
+                    continue;
+                }
+                var hasNoSuffix = true;
+                foreach (var suffix in suffixes)
+                {
+                    if (entry.Key.ToString().ToLowerInvariant().EndsWith(suffix.ToLowerInvariant()))
+                    {
+                        readyToUnflattenEntries[entry.Key.ToString().Substring(0, entry.Key.ToString().ToLowerInvariant().LastIndexOf(suffix.ToLowerInvariant())) + arbitrarySeparator + suffix] = entry.Value;
+                        hasNoSuffix = false;
+                        break;
+                    }
+                }
+                if (hasNoSuffix)
+                {
+                    readyToUnflattenEntries[entry.Key] = entry.Value;
+                }
+            }
+            return readyToUnflattenEntries.Unflatten(arbitrarySeparator).DecrapifyKeys(arbitraryMaleSuffix);
+        }
+
+        public static IDictionary UnhashKeys(string stblPath, string unhashedStblPath)
+        {
+            using (var stblStream = File.OpenRead(stblPath))
+            {
+                using (var unhashedStblStream = File.OpenRead(unhashedStblPath))
+                {
+                    return UnhashKeys(stblStream, unhashedStblStream);
+                }
+            }
+        }
+
+        public static IDictionary UnhashKeys(Stream stblStream, Stream unhashedStblStream)
+        {
+            IDictionary entriesWithHashedKeys = ReadStbl(stblStream),
+            entriesWithUnhashedKeys = new OrderedDictionary();
+            foreach (DictionaryEntry entry in ReadStbl(unhashedStblStream))
+            {
+                entriesWithUnhashedKeys[entry.Value] = entriesWithHashedKeys[entry.Key];
+            }
+            return entriesWithUnhashedKeys;
+        }
+
         public static void WriteStbl(string path, IDictionary entries, bool keysAsValues = false)
         {
             using (var stream = File.Create(path))
@@ -90,72 +160,6 @@ namespace Destrospean.STBLizePlus
                     writer.Write(value.ToCharArray());
                 }
             }
-        }
-
-        public static IDictionary Unflatten(this IDictionary entries)
-        {
-            return entries.Unflatten(sArbitrarySeparator).DecrapifyKeys();
-        }
-
-        public static IDictionary UnhashKeys(string stblPath, string unhashedStblPath, bool readyToUnflatten = false)
-        {
-            using (var stblStream = File.OpenRead(stblPath))
-            {
-                using (var unhashedStblStream = File.OpenRead(unhashedStblPath))
-                {
-                    return UnhashKeys(stblStream, unhashedStblStream, readyToUnflatten);
-                }
-            }
-        }
-
-        public static IDictionary UnhashKeys(Stream stblStream, Stream unhashedStblStream, bool readyToUnflatten = false)
-        {
-            var suffixes = readyToUnflatten ? new[]
-                {
-                    "_Female",
-                    "_FemaleFemale",
-                    "_MaleFemale"
-                } : new string[0];
-            IDictionary entriesWithHashedKeys = ReadStbl(stblStream),
-            entriesWithUnhashedKeys = new OrderedDictionary(),
-            intermediateEntries = new OrderedDictionary();
-            var keysToReplace = new System.Collections.Generic.List<string>();
-            foreach (DictionaryEntry entry in ReadStbl(unhashedStblStream))
-            {
-                var key = readyToUnflatten ? entry.Value.ToString().Replace("/", sArbitrarySeparator + "/").Replace(":", sArbitrarySeparator + ":") : entry.Value.ToString();
-                foreach (var suffix in suffixes)
-                {
-                    if (key.ToLowerInvariant().EndsWith(suffix.ToLowerInvariant()))
-                    {
-                        keysToReplace.Add(key.Substring(0, key.ToLowerInvariant().LastIndexOf(suffix.ToLowerInvariant())));
-                        break;
-                    }
-                }
-                intermediateEntries[key] = entriesWithHashedKeys[entry.Key];
-            }
-            foreach (DictionaryEntry entry in intermediateEntries)
-            {
-                if (keysToReplace.Contains(entry.Key.ToString()))
-                {
-                    entriesWithUnhashedKeys[entry.Key + sArbitrarySeparator + sArbitraryMaleSuffix] = entry.Value;
-                    continue;
-                }
-                var hasNoSuffix = true;
-                foreach (var suffix in suffixes)
-                {
-                    if (entry.Key.ToString().ToLowerInvariant().EndsWith(suffix.ToLowerInvariant()))
-                    {
-                        entriesWithUnhashedKeys[entry.Key.ToString().Substring(0, entry.Key.ToString().ToLowerInvariant().LastIndexOf(suffix.ToLowerInvariant())) + sArbitrarySeparator + suffix] = entry.Value;
-                        hasNoSuffix = false;
-                        break;
-                    }
-                }
-                if (hasNoSuffix)
-                {
-                    entriesWithUnhashedKeys[entry.Key] = entry.Value;
-                }
-            }
-            return entriesWithUnhashedKeys;
         }
     }
 }
