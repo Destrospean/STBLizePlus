@@ -15,6 +15,7 @@ namespace Destrospean.STBLizePlus
                 UnhashedFilename,
                 NoUnhashed,
                 UnhashedOnly,
+                JsonOnly,
                 XmlOnly,
                 YamlOnly
             }
@@ -74,6 +75,16 @@ namespace Destrospean.STBLizePlus
                             }
                         },
                         {
+                            Names.JsonOnly,
+                            new[]
+                            {
+                                "Only create a JSON",
+                                "-jo",
+                                "--json",
+                                "--json-only"
+                            }
+                        },
+                        {
                             Names.XmlOnly,
                             new[]
                             {
@@ -97,7 +108,8 @@ namespace Destrospean.STBLizePlus
                 }
             }
 
-            public bool NoUnhashed = false,
+            public bool JsonOnly = false,
+            NoUnhashed = false,
             UnhashedOnly = false,
             XmlOnly = false,
             YamlOnly = false;
@@ -139,10 +151,15 @@ namespace Destrospean.STBLizePlus
                         {
                             var outputFileTypes = new System.Collections.Generic.List<string>
                                 {
+                                    "JSON",
                                     "XML",
                                     "YAML"
                                 };
-                            if (arguments.XmlOnly)
+                            if (arguments.JsonOnly)
+                            {
+                                outputFileTypes.RemoveAll(x => x != "JSON");
+                            }
+                            else if (arguments.XmlOnly)
                             {
                                 outputFileTypes.RemoveAll(x => x != "XML");
                             }
@@ -153,6 +170,7 @@ namespace Destrospean.STBLizePlus
                             var outputDirectory = FileSystemUtils.GetOutputDirectory(path, arguments.OutputDirectory, outputFileTypes.ToArray());
                             WriteFiles(path, arguments.UnhashedFilename, outputDirectory, arguments.OutputFilename, (outputPath, entries) => 
                                 {
+                                    WriteFile(outputPath, "JSON", entries, PlainTextUtils.WriteJson, arguments.OutputFilename == null, true, outputFileTypes.ToArray());
                                     WriteFile(outputPath, "XML", entries, PlainTextUtils.WriteXml, arguments.OutputFilename == null, outputFileTypes.ToArray());
                                     WriteFile(outputPath, "YAML", entries, PlainTextUtils.WriteYaml, arguments.OutputFilename == null, true, outputFileTypes.ToArray());
                                 },  outputFileTypes.ToArray());
