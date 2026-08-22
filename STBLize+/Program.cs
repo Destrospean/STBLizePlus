@@ -156,7 +156,7 @@ namespace Destrospean.STBLizePlus
                                     WriteFile(outputPath, "XML", entries, PlainTextUtils.WriteXml, arguments.OutputFilename == null, outputFileTypes.ToArray());
                                     WriteFile(outputPath, "YAML", entries, PlainTextUtils.WriteYaml, arguments.OutputFilename == null, true, outputFileTypes.ToArray());
                                 },  outputFileTypes.ToArray());
-                            Console.WriteLine(outputDirectory);
+                            Console.WriteLine(Path.GetFullPath(outputDirectory));
                             return;
                         }
                     }
@@ -180,7 +180,7 @@ namespace Destrospean.STBLizePlus
                 {
                     STBLUtils.WriteStbl(outputFolder + Path.DirectorySeparatorChar + arguments.UnhashedFilename, dictionary, true);
                 }
-                Console.WriteLine(outputFolder);
+                Console.WriteLine(Path.GetFullPath(outputFolder));
             }
             catch (Exception ex)
             {
