@@ -16,59 +16,42 @@ namespace Destrospean
             get;
         }
 
-        void Check(object name, string arg, ref bool skip)
-        {
-            for (var i = 1; !skip && i < Dictionary[name].Length; i++)
-            {
-                if (arg == Dictionary[name][i])
-                {
-                    GetType().GetField(name.ToString()).SetValue(this, true);
-                    skip = true;
-                    break;
-                }
-            }
-        }
-
-        void CheckForValue(object name, string arg, string value, ref bool skip)
-        {
-            for (var i = 1; !skip && i < Dictionary[name].Length; i++)
-            {
-                if (arg == Dictionary[name][i])
-                {
-                    GetType().GetField(name.ToString()).SetValue(this, value);
-                    skip = true;
-                    break;
-                }
-            }
-        }
-
         public void CheckAll(string[] args, out string[] positionalArgs)
         {
             var positionalList = new List<string>();
             for (var i = 0; i < args.Length; i++)
             {
-                var skip = false;
                 if (i > 0 && args[i - 1].StartsWith("-"))
                 {
                     foreach (object name in Enum.GetValues(GetType().GetNestedType("Names", BindingFlags.NonPublic)))
                     {
-                        if (GetType().GetField(name.ToString()).FieldType != typeof(bool))
+                        for (var j = 1; GetType().GetField(name.ToString()).FieldType != typeof(bool) && j < Dictionary[name].Length; j++)
                         {
-                            CheckForValue(name, args[i - 1], args[i], ref skip);
+                            if (args[i - 1] == Dictionary[name][j])
+                            {
+                                GetType().GetField(name.ToString()).SetValue(this, args[i]);
+                                goto skip;
+                            }
                         }
                     }
                 }
                 foreach (object name in Enum.GetValues(GetType().GetNestedType("Names", BindingFlags.NonPublic)))
                 {
-                    if (GetType().GetField(name.ToString()).FieldType == typeof(bool))
+                    for (var j = 1; GetType().GetField(name.ToString()).FieldType == typeof(bool) && j < Dictionary[name].Length; j++)
                     {
-                        Check(name, args[i], ref skip);
+                        if (args[i] == Dictionary[name][j])
+                        {
+                            GetType().GetField(name.ToString()).SetValue(this, true);
+                            goto skip;
+                        }
                     }
                 }
-                if (!skip && !args[i].StartsWith("-"))
+                if (!args[i].StartsWith("-"))
                 {
                     positionalList.Add(args[i]);
                 }
+                skip:
+                continue;
             }
             positionalArgs = positionalList.ToArray();
         }
@@ -137,7 +120,7 @@ namespace Destrospean
                 var lastIndex = 0;
                 while (Console.WindowWidth > maxLength + 7 && lines[lastIndex].Length > Console.WindowWidth)
                 {
-                    var offset = Console.WindowWidth - lines[lastIndex].Substring(0, Console.WindowWidth + 1).LastIndexOf(" ");
+                    var offset = Console.WindowWidth - lines[lastIndex].Substring(0, Console.WindowWidth).LastIndexOf(" ");
                     lines.Add(indentation + lines[lastIndex].Substring(Console.WindowWidth - offset));
                     lines[lastIndex] = lines[lastIndex++].Remove(Console.WindowWidth - offset);
                 }
