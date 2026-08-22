@@ -6,14 +6,11 @@ using System.Linq;
 
 namespace Destrospean.STBLizePlus
 {
-    public static class DictionaryUtils
+    public static class DictionaryFlatteningUtils
     {
         static string ConstructKey(string previousKey, string separator, object newKey, string replaceSeparators = null)
         {
-            if (replaceSeparators != null)
-            {
-                newKey = newKey.ToString().Replace(separator, replaceSeparators);
-            }
+            newKey = replaceSeparators == null ? newKey : newKey.ToString().Replace(separator, replaceSeparators);
             return string.IsNullOrEmpty(previousKey) ? newKey.ToString() : string.Format("{0}{1}{2}", previousKey, separator, newKey);
         }
 

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.IO;
-using YamlDotNet.Core;
-using YamlDotNet.Serialization;
 
 namespace Destrospean.STBLizePlus
 {
@@ -57,48 +55,14 @@ namespace Destrospean.STBLizePlus
             {
                 using (var reader = new StreamReader(stream))
                 {
-                    entries = new DeserializerBuilder().Build().Deserialize<IDictionary>(reader).Flatten("");
+                    entries = new YamlDotNet.Serialization.DeserializerBuilder().Build().Deserialize<IDictionary>(reader).Flatten("");
                 }
                 return true;
             }
-            catch (YamlException)
+            catch (YamlDotNet.Core.YamlException)
             {
                 return false;
             }
-        }
-
-        public static void WriteFile(IDictionary entries, string directory, string filename, string fileType, Action<IDictionary, StreamWriter> writeFileCallback, bool outputFileNameUndefined = true, params string[] fileTypes)
-        {
-            WriteFile(entries, directory, filename, fileType, writeFileCallback, outputFileNameUndefined, false, fileTypes);
-        }
-
-        public static void WriteFile(IDictionary entries, string directory, string filename, string fileType, Action<IDictionary, StreamWriter> writeFileCallback, bool outputFileNameUndefined = true, bool unflatten = false, params string[] fileTypes)
-        {
-            if (fileTypes.Length > 1)
-            {
-                filename = Path.GetFileNameWithoutExtension(filename);
-            }
-            if (!Array.Exists(fileTypes, x => x == fileType))
-            {
-                return;
-            }
-            using (var stream = File.Create(directory + Path.DirectorySeparatorChar + filename + ((outputFileNameUndefined || fileTypes.Length > 1) && !filename.ToLowerInvariant().EndsWith("." + fileType.ToLowerInvariant()) ? "." + fileType.ToLowerInvariant() : "")))
-            {
-                using (var writer = new StreamWriter(stream))
-                {
-                    writeFileCallback(unflatten ? entries.Unflatten() : entries, writer);
-                }
-            }
-        }
-
-        public static void WriteFiles(string inputPath, string unhashedFilename, string outputDirectory, string outputFilename, Action<string, string, IDictionary> writeFilesCallback, params string[] outputFileTypes)
-        {
-            var pathWithoutExtension = Path.GetFullPath(inputPath.Contains(".") ? inputPath.Substring(0, inputPath.LastIndexOf(".")) : inputPath);
-            if (!Directory.Exists(outputDirectory))
-            {
-                FileSystemUtils.CreateSTBLizePlusDirectoryFile(outputDirectory);
-            }
-            writeFilesCallback(outputDirectory, outputFilename ?? Path.GetFileName(pathWithoutExtension), STBLUtils.UnhashKeys(inputPath, Path.GetDirectoryName(pathWithoutExtension) + Path.DirectorySeparatorChar + unhashedFilename));
         }
 
         public static void WriteXml(IDictionary entries, StreamWriter writer)

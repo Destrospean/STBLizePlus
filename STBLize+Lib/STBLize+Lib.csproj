@@ -34,10 +34,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="DictionaryUtils.cs" />
     <Compile Include="PlainTextUtils.cs" />
     <Compile Include="STBLUtils.cs" />
     <Compile Include="FileSystemUtils.cs" />
+    <Compile Include="DictionaryFlatteningUtils.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
