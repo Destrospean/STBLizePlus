@@ -59,18 +59,18 @@ namespace Destrospean.STBLizePlus
                                 outputFileTypes.RemoveAll(x => x != "YAML");
                             }
                             var outputDirectory = FileSystemUtils.GetOutputDirectory(path, options.OutputDirectory, outputFileTypes.ToArray());
-                            PlainTextUtils.WriteFiles(path, options.UnhashedFilename, outputDirectory, options.OutputFilename, (directory, filename, newEntries) => 
+                            PlainTextUtils.WriteFiles(path, options.UnhashedFilename, outputDirectory, options.OutputFilename, (directory, filename, entries) => 
                                 {
-                                    PlainTextUtils.WriteFile(newEntries, directory, filename, "XML", PlainTextUtils.WriteXml, options.OutputFilename == null, outputFileTypes.ToArray());
-                                    PlainTextUtils.WriteFile(newEntries, directory, filename, "YAML", PlainTextUtils.WriteYaml, options.OutputFilename == null, true, outputFileTypes.ToArray());
+                                    PlainTextUtils.WriteFile(entries, directory, filename, "XML", PlainTextUtils.WriteXml, options.OutputFilename == null, outputFileTypes.ToArray());
+                                    PlainTextUtils.WriteFile(entries, directory, filename, "YAML", PlainTextUtils.WriteYaml, options.OutputFilename == null, true, outputFileTypes.ToArray());
                                 },  outputFileTypes.ToArray());
                             Console.WriteLine(outputDirectory);
                             return;
                         }
                     }
                 }
-                System.Collections.IDictionary entries;
-                if (!PlainTextUtils.TryReadXml(path, out entries) && !PlainTextUtils.TryReadYaml(path, out entries))
+                System.Collections.IDictionary dictionary;
+                if (!PlainTextUtils.TryReadXml(path, out dictionary) && !PlainTextUtils.TryReadYaml(path, out dictionary))
                 {
                     throw new ArgumentException("File must be a valid JSON, XML, or YAML", path);
                 }
@@ -82,11 +82,11 @@ namespace Destrospean.STBLizePlus
                 options.OutputFilename = options.OutputFilename ?? Path.GetFileNameWithoutExtension(path) + ".stbl";
                 if (!options.UnhashedOnly)
                 {
-                    STBLUtils.WriteStbl(outputFolder + Path.DirectorySeparatorChar + options.OutputFilename, entries);
+                    STBLUtils.WriteStbl(outputFolder + Path.DirectorySeparatorChar + options.OutputFilename, dictionary);
                 }
                 if (!options.NoUnhashed)
                 {
-                    STBLUtils.WriteStbl(outputFolder + Path.DirectorySeparatorChar + options.UnhashedFilename, entries, true);
+                    STBLUtils.WriteStbl(outputFolder + Path.DirectorySeparatorChar + options.UnhashedFilename, dictionary, true);
                 }
                 Console.WriteLine(outputFolder);
             }
