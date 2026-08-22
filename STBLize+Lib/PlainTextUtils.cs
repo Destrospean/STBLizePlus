@@ -72,7 +72,6 @@ namespace Destrospean.STBLizePlus
 
         public static void WriteJson(IDictionary entries, StreamWriter writer, int indent = 4, int level = 0)
         {
-            //new YamlDotNet.Serialization.SerializerBuilder().JsonCompatible().Build().Serialize(writer, entries);
             if (level == 0)
             {
                 writer.WriteLine("{");
