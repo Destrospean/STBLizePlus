@@ -139,6 +139,7 @@ namespace Destrospean.STBLizePlus
                     if (key.ToLowerInvariant().EndsWith(suffix.ToLowerInvariant()))
                     {
                         keysToReplace.Add(key.Substring(0, key.ToLowerInvariant().LastIndexOf(suffix.ToLowerInvariant())));
+                        break;
                     }
                 }
                 intermediateEntries[key] = entriesWithHashedKeys[entry.Key];
