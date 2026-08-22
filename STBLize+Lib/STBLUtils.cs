@@ -19,6 +19,8 @@ namespace Destrospean.STBLizePlus
             return decrapifiedKeyEntries;
         }
 
+        public const int FourCC = 0x4C425453;
+
         public static ulong GetFnv64(string value)
         {
             var hash = 0xCBF29CE484222325;
@@ -75,7 +77,7 @@ namespace Destrospean.STBLizePlus
         {
             using (var writer = new BinaryWriter(stream, System.Text.Encoding.Unicode))
             {
-                writer.Write(0x4C425453);
+                writer.Write(FourCC);
                 writer.Write((byte)2);
                 writer.Write(new byte[2]);
                 writer.Write(entries.Count);

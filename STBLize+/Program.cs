@@ -43,7 +43,7 @@ namespace Destrospean.STBLizePlus
                 {
                     using (var reader = new BinaryReader(stream, System.Text.Encoding.Unicode))
                     {
-                        if (reader.ReadUInt32() == 0x4C425453)
+                        if (reader.ReadInt32() == STBLUtils.FourCC)
                         {
                             var outputFileTypes = new System.Collections.Generic.List<string>
                                 {

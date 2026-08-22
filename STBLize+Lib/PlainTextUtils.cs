@@ -113,10 +113,10 @@ namespace Destrospean.STBLizePlus
 
         public static void WriteYaml(IDictionary entries, StreamWriter writer)
         {
-            WriteYaml(entries, writer, 0, 4);
+            WriteYaml(entries, writer, 4);
         }
 
-        public static void WriteYaml(IDictionary entries, StreamWriter writer, int level, int indent)
+        public static void WriteYaml(IDictionary entries, StreamWriter writer, int indent = 4, int level = 0)
         {
             var indentation = "";
             for (var i = 0; i < indent * level; i++)
@@ -132,7 +132,7 @@ namespace Destrospean.STBLizePlus
                     continue;
                 }
                 writer.WriteLine(indentation + "\"" + entry.Key + "\":");
-                WriteYaml(dictionary, writer, level + 1, indent);
+                WriteYaml(dictionary, writer, indent, level + 1);
             }
         }
     }
