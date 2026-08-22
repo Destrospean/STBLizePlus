@@ -133,15 +133,15 @@ namespace Destrospean.STBLizePlus
             var keysToReplace = new System.Collections.Generic.List<string>();
             foreach (DictionaryEntry entry in ReadStbl(unhashedStblStream))
             {
-                var value = readyToUnflatten ? entry.Value.ToString().Replace("/", sArbitrarySeparator + "/").Replace(":", sArbitrarySeparator + ":") : entry.Value.ToString();
+                var key = readyToUnflatten ? entry.Value.ToString().Replace("/", sArbitrarySeparator + "/").Replace(":", sArbitrarySeparator + ":") : entry.Value.ToString();
                 foreach (var suffix in suffixes)
                 {
-                    if (value.ToLowerInvariant().EndsWith(suffix.ToLowerInvariant()))
+                    if (key.ToLowerInvariant().EndsWith(suffix.ToLowerInvariant()))
                     {
-                        keysToReplace.Add(value.Substring(0, value.ToLowerInvariant().LastIndexOf(suffix.ToLowerInvariant())));
+                        keysToReplace.Add(key.Substring(0, key.ToLowerInvariant().LastIndexOf(suffix.ToLowerInvariant())));
                     }
                 }
-                intermediateEntries[value] = entriesWithHashedKeys[entry.Key];
+                intermediateEntries[key] = entriesWithHashedKeys[entry.Key];
             }
             foreach (DictionaryEntry entry in intermediateEntries)
             {
