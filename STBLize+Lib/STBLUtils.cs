@@ -9,6 +9,8 @@ namespace Destrospean.STBLizePlus
         static readonly string sArbitraryMaleSuffix = "{DESTROSPEAN_STBL_MALE_SUFFIX_" + System.Guid.NewGuid() + "}",
         sArbitrarySeparator = "{DESTROSPEAN_STBL_SEPARATOR_" + System.Guid.NewGuid() + "}";
 
+        public const int FourCC = 0x4C425453;
+
         public static IDictionary DecrapifyKeys(this IDictionary entries)
         {
             var decrapifiedKeyEntries = new OrderedDictionary();
@@ -18,8 +20,6 @@ namespace Destrospean.STBLizePlus
             }
             return decrapifiedKeyEntries;
         }
-
-        public const int FourCC = 0x4C425453;
 
         public static ulong GetFnv64(string value)
         {
