@@ -65,6 +65,41 @@ namespace Destrospean.STBLizePlus
             }
         }
 
+        public static void WriteJson(IDictionary entries, StreamWriter writer)
+        {
+            WriteJson(entries, writer, 4);
+        }
+
+        public static void WriteJson(IDictionary entries, StreamWriter writer, int indent = 4, int level = 0)
+        {
+            //new YamlDotNet.Serialization.SerializerBuilder().JsonCompatible().Build().Serialize(writer, entries);
+            if (level == 0)
+            {
+                writer.WriteLine("{");
+                WriteJson(entries, writer, 4, 1);
+                return;
+            }
+            var indentation = "";
+            for (var i = 0; i < indent * level; i++)
+            {
+                indentation += " ";
+            }
+            var index = 0;
+            foreach (DictionaryEntry entry in entries)
+            {
+                var dictionary = entry.Value as IDictionary;
+                if (dictionary == null)
+                {
+                    writer.WriteLine(indentation + "\"" + entry.Key + "\": \"" + entry.Value + "\"" + (index++ < entries.Count - 1 ? "," : ""));
+                    continue;
+                }
+                writer.WriteLine(indentation + "\"" + entry.Key + "\": {");
+                WriteJson(dictionary, writer, indent, level + 1);
+                writer.WriteLine(index++ < entries.Count - 1 ? "," : "");
+            }
+            writer.Write(indentation.Remove(0, indent) + "}");
+        }
+
         public static void WriteXml(IDictionary entries, StreamWriter writer)
         {
             writer.WriteLine("<?xml version=\"1.0\" ?>" + Environment.NewLine + "<TEXT>" + Environment.NewLine);
