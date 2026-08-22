@@ -9,13 +9,6 @@ namespace Destrospean.STBLizePlus
         static readonly string sArbitraryMaleSuffix = "{DESTROSPEAN_STBL_MALE_SUFFIX_" + System.Guid.NewGuid() + "}",
         sArbitrarySeparator = "{DESTROSPEAN_STBL_SEPARATOR_" + System.Guid.NewGuid() + "}";
 
-        static void WriteEntryPair(BinaryWriter writer, string key, string value)
-        {
-            writer.Write(GetFnv64(key));
-            writer.Write(value.Length);
-            writer.Write(value.ToCharArray());
-        }
-
         public static IDictionary DecrapifyKeys(this IDictionary entries)
         {
             var decrapifiedKeyEntries = new OrderedDictionary();
@@ -82,23 +75,17 @@ namespace Destrospean.STBLizePlus
         {
             using (var writer = new BinaryWriter(stream, System.Text.Encoding.Unicode))
             {
-                writer.Write(new byte[]
-                    {
-                        83,
-                        84,
-                        66,
-                        76
-                    });
-                writer.Write(new byte[]
-                    {
-                        2
-                    });
+                writer.Write(0x4C425453);
+                writer.Write((byte)2);
                 writer.Write(new byte[2]);
                 writer.Write(entries.Count);
                 writer.Write(new byte[6]);
                 foreach (DictionaryEntry entry in entries)
                 {
-                    WriteEntryPair(writer, entry.Key.ToString(), keysAsValues ? entry.Key.ToString() : entry.Value.ToString());
+                    writer.Write(GetFnv64(entry.Key.ToString()));
+                    var value = (keysAsValues ? entry.Key : entry.Value).ToString();
+                    writer.Write(value.Length);
+                    writer.Write(value.ToCharArray());
                 }
             }
         }
