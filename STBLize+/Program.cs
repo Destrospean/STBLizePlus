@@ -200,6 +200,7 @@ namespace Destrospean.STBLizePlus
                 }
             }
         }
+
         public static void WriteFile(string path, string fileType, IDictionary entries, Action<IDictionary, StreamWriter> writeFileCallback, bool outputFileNameUndefined = true, params string[] fileTypes)
         {
             WriteFile(path, fileType, entries, writeFileCallback, outputFileNameUndefined, false, fileTypes);
