@@ -95,7 +95,7 @@ namespace Destrospean.STBLizePlus
                         }
                     };
                 }
-            } 
+            }
 
             public bool NoUnhashed = false,
             UnhashedOnly = false,
